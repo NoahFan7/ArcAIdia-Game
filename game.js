@@ -751,29 +751,42 @@ const ENEMIES = [
 function drawGlitchEnemy(x, y) {
   const cx = Math.floor(x), cy = Math.floor(y);
   const cols = [PALETTE.red, PALETTE.purple, PALETTE.orange, PALETTE.lblue];
+  rect(cx + 3, cy + 10, 10, 6, PALETTE.dgray);
+  rect(cx + 4, cy + 15, 3, 4, '#3a2a3a');
+  rect(cx + 9, cy + 15, 3, 4, '#3a2a3a');
+  rect(cx + 2, cy + 8, 12, 3, PALETTE.purple);
+  rect(cx + 3, cy + 2, 10, 7, PALETTE.void);
   for (let i = 0; i < 6; i++) {
-    rect(cx + (i % 3) * 5, cy + Math.floor(i / 3) * 6, 4, 5, cols[(i + (cx | 0)) % cols.length]);
+    const gx = cx + 3 + (i % 3) * 3;
+    const gy = cy + 2 + Math.floor(i / 3) * 3;
+    rect(gx, gy, 2, 2, cols[(i + ((cx | 0) % 4)) % cols.length]);
   }
-  rect(cx + 2, cy + 1, 2, 1, PALETTE.void);
-  rect(cx + 8, cy + 1, 2, 1, PALETTE.void);
-  rect(cx + 3, cy + 4, 6, 1, PALETTE.void);
+  rect(cx + 4, cy + 5, 2, 1, PALETTE.gold);
+  rect(cx + 9, cy + 5, 2, 1, PALETTE.gold);
+  rect(cx + 5, cy + 8, 6, 1, PALETTE.void);
+  rect(cx + 1, cy + 4, 2, 3, PALETTE.lblue);
+  rect(cx + 13, cy + 4, 2, 3, PALETTE.lblue);
 }
 
 function drawDevilBoss(x, y) {
   const cx = Math.floor(x), cy = Math.floor(y);
-  rect(cx + 2, cy + 12, 10, 5, PALETTE.red);
-  rect(cx + 3, cy + 11, 8, 1, PALETTE.red);
-  rect(cx + 4, cy + 6, 6, 6, PALETTE.red);
-  rect(cx + 3, cy + 3, 8, 4, PALETTE.red);
-  rect(cx + 2, cy + 1, 2, 3, PALETTE.void);
-  rect(cx + 3, cy + 0, 2, 2, PALETTE.void);
-  rect(cx + 9, cy + 1, 2, 3, PALETTE.void);
-  rect(cx + 8, cy + 0, 2, 2, PALETTE.void);
-  rect(cx + 4, cy + 4, 1, 1, PALETTE.gold);
-  rect(cx + 7, cy + 4, 1, 1, PALETTE.gold);
-  rect(cx + 5, cy + 7, 2, 1, PALETTE.void);
-  rect(cx + 1, cy + 17, 4, 3, '#3a2a1a');
-  rect(cx + 9, cy + 17, 4, 3, '#3a2a1a');
+  rect(cx + 4, cy + 14, 8, 5, PALETTE.red);
+  rect(cx + 5, cy + 18, 2, 3, '#3a2a1a');
+  rect(cx + 9, cy + 18, 2, 3, '#3a2a1a');
+  rect(cx + 3, cy + 8, 10, 7, PALETTE.red);
+  rect(cx + 2, cy + 10, 2, 4, PALETTE.red);
+  rect(cx + 12, cy + 10, 2, 4, PALETTE.red);
+  rect(cx + 3, cy + 3, 10, 6, PALETTE.red);
+  rect(cx + 2, cy + 0, 3, 4, PALETTE.void);
+  rect(cx + 3, cy + 0, 1, 2, PALETTE.red);
+  rect(cx + 11, cy + 0, 3, 4, PALETTE.void);
+  rect(cx + 12, cy + 0, 1, 2, PALETTE.red);
+  rect(cx + 4, cy + 4, 2, 2, PALETTE.gold);
+  rect(cx + 9, cy + 4, 2, 2, PALETTE.gold);
+  rect(cx + 4, cy + 5, 1, 1, PALETTE.void);
+  rect(cx + 10, cy + 5, 1, 1, PALETTE.void);
+  rect(cx + 5, cy + 7, 5, 1, PALETTE.void);
+  rect(cx + 6, cy + 8, 3, 1, '#8a2a2a');
 }
 
 function drawFighterPortrait(f, x, y, sel) {
@@ -800,6 +813,8 @@ const FIGHT = {
     this.turn = 'player'; this.log = ['A ' + e.name + ' appears!']; this.logT = 0;
     this.spCd = 0; this.state = 'play'; this.shake = 0;
     this.pflash = 0; this.eflash = 0; this.fighter = f;
+    this.spAnim = null;
+    this.lungeT = 0; this.elungeT = 0;
   },
   selectFighter: function (i) {
     this.selIdx = i; this.startBattle(); this.sub = 'battle';
@@ -808,7 +823,7 @@ const FIGHT = {
     if (this.turn !== 'player' || this.state !== 'play') return;
     const dmg = this.player.atk + this.player.buff + Math.floor(Math.random() * 4);
     this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
-    this.eflash = 10; this.shake = 6;
+    this.eflash = 10; this.shake = 6; this.lungeT = 12;
     playSfx('hit');
     this.log = [this.player.name + ' attacks! ' + dmg + ' dmg'];
     this.logT = 0; this.endTurn();
@@ -816,16 +831,17 @@ const FIGHT = {
   doSpecial: function () {
     if (this.turn !== 'player' || this.state !== 'play' || this.spCd > 0) return;
     const f = this.fighter; let msg = '';
+    this.spAnim = { type: f.spType, name: f.sp, t: 0, max: 40 };
     if (f.spType === 'dmg') {
       const dmg = f.spPow + Math.floor(Math.random() * 5);
       this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
-      this.eflash = 14; this.shake = 10;
+      this.eflash = 14; this.shake = 10; this.lungeT = 16;
       msg = f.sp + '! ' + dmg + ' dmg!';
     } else if (f.spType === 'drain') {
       const dmg = f.spPow + Math.floor(Math.random() * 4);
       this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
       this.player.hp = Math.min(this.player.maxhp, this.player.hp + Math.floor(dmg / 2));
-      this.eflash = 12; this.pflash = 6;
+      this.eflash = 12; this.pflash = 6; this.lungeT = 14;
       msg = f.sp + '! ' + dmg + ' dmg, healed!';
     } else if (f.spType === 'buff') {
       this.player.buff += f.spPow; this.pflash = 10;
@@ -851,7 +867,7 @@ const FIGHT = {
     if (this.turn !== 'enemy' || this.state !== 'play') return;
     const dmg = Math.max(1, this.enemy.atk - this.enemy.debuff + Math.floor(Math.random() * 4) - 1);
     this.player.hp = Math.max(0, this.player.hp - dmg);
-    this.pflash = 10; this.shake = 6;
+    this.pflash = 10; this.shake = 6; this.elungeT = 12;
     this.log = [this.enemy.name + ' hits! ' + dmg + ' dmg'];
     this.logT = 0; this.spCd = Math.max(0, this.spCd - 1);
     if (this.player.hp <= 0) { this.state = 'lose'; playSfx('lose'); return; }
@@ -861,6 +877,9 @@ const FIGHT = {
     if (this.shake > 0) this.shake--;
     if (this.pflash > 0) this.pflash--;
     if (this.eflash > 0) this.eflash--;
+    if (this.lungeT > 0) this.lungeT--;
+    if (this.elungeT > 0) this.elungeT--;
+    if (this.spAnim) { this.spAnim.t++; if (this.spAnim.t >= this.spAnim.max) this.spAnim = null; }
     if (this.logT < 60) this.logT++;
     if (this.sub === 'select') {
       for (let i = 0; i < FIGHTERS.length; i++) {
@@ -925,29 +944,127 @@ const FIGHT = {
     }
     drawHUD();
   },
+  drawSpAnim: function (px, py, ex, ey) {
+    if (!this.spAnim) return;
+    const a = this.spAnim;
+    const t = a.t;
+    const p = t / a.max;
+    const cx = VW / 2;
+    if (a.type === 'dmg') {
+      const numP = 8 + Math.floor(t / 3);
+      for (let i = 0; i < numP; i++) {
+        const ang = (i / numP) * Math.PI * 2 + t * 0.2;
+        const rad = 4 + t * 1.2;
+        const x = ex + 7 + Math.cos(ang) * rad;
+        const y = ey + 9 + Math.sin(ang) * rad;
+        const cols = [PALETTE.red, PALETTE.orange, PALETTE.gold, PALETTE.cream];
+        rect(x - 1, y - 1, 2, 2, cols[i % cols.length]);
+      }
+      if (t > 8 && t < 24 && t % 4 < 2) {
+        ctx.font = '10px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.gold;
+        ctx.fillText('POW!', ex + 7, ey - 4);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'drain') {
+      for (let i = 0; i < 6; i++) {
+        const sp = (i / 6 + p) % 1;
+        const x = ex + 7 + (px + 7 - (ex + 7)) * sp;
+        const y = ey + 9 + (py + 9 - (ey + 9)) * sp - Math.sin(sp * Math.PI) * 20;
+        rect(x - 1, y - 1, 2, 2, PALETTE.purple);
+        rect(x - 2, y - 2, 4, 4, PALETTE.lblue);
+      }
+      if (t % 6 < 3) {
+        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.purple;
+        ctx.fillText('DRAIN!', cx, ey - 12);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'buff') {
+      for (let i = 0; i < 5; i++) {
+        const sp = (i / 5 + p * 2) % 1;
+        const x = px + 7 + Math.sin(t * 0.3 + i) * 12;
+        const y = py + 20 - sp * 30;
+        rect(x - 1, y - 1, 2, 2, PALETTE.gold);
+        if (sp > 0.8) rect(x - 2, y - 2, 4, 4, PALETTE.cream);
+      }
+      if (t % 8 < 4) {
+        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.gold;
+        ctx.fillText('BUFF UP!', px + 7, py - 12);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'debuff') {
+      for (let i = 0; i < 6; i++) {
+        const ang = (i / 6) * Math.PI * 2 + t * 0.15;
+        const rad = 10 + Math.sin(t * 0.2 + i) * 4;
+        const x = ex + 7 + Math.cos(ang) * rad;
+        const y = ey + 9 + Math.sin(ang) * rad;
+        rect(x - 1, y - 1, 2, 2, PALETTE.gray);
+      }
+      if (t % 8 < 4) {
+        ctx.font = '7px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.gray;
+        ctx.fillText('WEAKEN!', ex + 7, ey - 12);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'heal') {
+      for (let i = 0; i < 5; i++) {
+        const sp = (i / 5 + p) % 1;
+        const x = px + 3 + (i % 3) * 5 + Math.sin(t * 0.2 + i) * 3;
+        const y = py + 20 - sp * 25;
+        rect(x - 1, y - 1, 2, 2, PALETTE.green);
+        if (sp > 0.7) {
+          rect(x - 2, y - 3, 4, 2, PALETTE.green);
+          rect(x - 1, y - 5, 2, 2, PALETTE.green);
+        }
+      }
+      if (t % 8 < 4) {
+        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.green;
+        ctx.fillText('+HEAL!', px + 7, py - 12);
+        ctx.textAlign = 'left';
+      }
+    }
+  },
   drawBattle: function () {
     const sx = this.shake > 0 ? (Math.random() - 0.5) * this.shake : 0;
     rect(0, 0, VW, VH, PALETTE.bg);
     rect(0, 0, VW, 20, PALETTE.dgray);
     textCenter('OFFICE BRAWL', 6, 8, PALETTE.gold);
+    rect(0, 110, VW, 2, PALETTE.dgray);
     const f = this.fighter;
-    const py = 120 - (this.pflash > 0 && this.pflash % 4 < 2 ? 2 : 0);
+    const baseY = 90;
+    const plunge = this.lungeT > 0 ? Math.sin((this.lungeT / 12) * Math.PI) * 20 : 0;
+    const elunge = this.elungeT > 0 ? Math.sin((this.elungeT / 12) * Math.PI) * -20 : 0;
+    const py = baseY - (this.pflash > 0 && this.pflash % 4 < 2 ? 2 : 0);
+    const px = 30 + plunge + sx;
+    const ex = 320 + elunge + sx * -1;
+    const ey = baseY - (this.eflash > 0 && this.eflash % 4 < 2 ? 2 : 0);
     if (this.pflash > 0 && this.pflash % 4 < 2) {
-      drawPerson(40 + sx, py, { shirt: f.shirt, hair: f.hair, skin: f.skin, gender: f.gender, hairStyle: f.hairStyle, flash: true });
+      drawPerson(px, py, { shirt: f.shirt, hair: f.hair, skin: f.skin, gender: f.gender, hairStyle: f.hairStyle, flash: true });
     } else {
-      drawPerson(40 + sx, py, { shirt: f.shirt, hair: f.hair, skin: f.skin, gender: f.gender, hairStyle: f.hairStyle });
+      drawPerson(px, py, { shirt: f.shirt, hair: f.hair, skin: f.skin, gender: f.gender, hairStyle: f.hairStyle });
     }
     ctx.font = '6px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = PALETTE.gold;
-    ctx.fillText(f.name, 49 + sx, py - 8);
+    ctx.fillText(f.name, px + 9, py - 8);
     ctx.textAlign = 'left';
-    this.drawHpBar(20, 80, 80, this.player.hp, this.player.maxhp, PALETTE.green);
-    text('YOU', 20, 70, 6, PALETTE.cream);
-    if (this.player.buff > 0) text('ATK+' + this.player.buff, 20, 92, 5, PALETTE.gold);
-    const ex = 320 + sx * -1;
-    const ey = 30 - (this.eflash > 0 && this.eflash % 4 < 2 ? 2 : 0);
+    this.drawHpBar(20, 30, 80, this.player.hp, this.player.maxhp, PALETTE.green);
+    text('YOU', 20, 20, 6, PALETTE.cream);
+    if (this.player.buff > 0) text('ATK+' + this.player.buff, 20, 42, 5, PALETTE.gold);
     if (this.eflash > 0 && this.eflash % 4 < 2) {
       if (this.enemy.kind === 'glitch') drawGlitchEnemy(ex, ey);
       else drawDevilBoss(ex, ey);
@@ -959,11 +1076,12 @@ const FIGHT = {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     ctx.fillStyle = PALETTE.red;
-    ctx.fillText(this.enemy.name, ex + 7, ey - 8);
+    ctx.fillText(this.enemy.name, ex + 8, ey - 8);
     ctx.textAlign = 'left';
-    this.drawHpBar(280, 80, 80, this.enemy.hp, this.enemy.maxhp, PALETTE.red);
-    text('ENEMY', 280, 70, 6, PALETTE.cream);
-    if (this.enemy.debuff > 0) text('ATK-' + this.enemy.debuff, 280, 92, 5, PALETTE.gray);
+    this.drawHpBar(280, 30, 80, this.enemy.hp, this.enemy.maxhp, PALETTE.red);
+    text('ENEMY', 280, 20, 6, PALETTE.cream);
+    if (this.enemy.debuff > 0) text('ATK-' + this.enemy.debuff, 280, 42, 5, PALETTE.gray);
+    this.drawSpAnim(px, py, ex, ey);
     if (this.state === 'play') {
       const canAct = (this.turn === 'player');
       const spReady = this.spCd === 0;
@@ -986,7 +1104,7 @@ const FIGHT = {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = PALETTE.cream;
-      ctx.fillText(this.log[0], VW / 2, 112);
+      ctx.fillText(this.log[0], VW / 2, 114);
       ctx.textAlign = 'left';
     }
     drawHUD();
