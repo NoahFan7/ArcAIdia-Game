@@ -23,7 +23,7 @@ let canvas, ctx;
 let state = { coins: 0, plushies: {}, screen: 'intro' };
 let keys = {};
 let justPressed = {};
-let mouse = { x: 0, y: 0 };
+let mouse = { x: 0, y: 0, down: false };
 let click = null;
 
 function loadState() {
@@ -397,6 +397,172 @@ const CROSSY = {
   }
 };
 
+const RUSH = {
+  CELL: 24, GRID: 6,
+  OX: 120, OY: 30,
+  exitRow: 2,
+  enter: function () { this.reset(); },
+  reset: function () {
+    this.state = 'play';
+    this.sel = -1;
+    this.drag = null;
+    this.pieces = [
+      { id: 'T', orient: 'h', len: 2, col: 0, row: 2, target: true, c: PALETTE.gold },
+      { id: 'A', orient: 'v', len: 2, col: 3, row: 2, c: PALETTE.red },
+      { id: 'B', orient: 'v', len: 3, col: 5, row: 1, c: PALETTE.purple }
+    ];
+    this.winT = 0;
+  },
+  cellsOf: function (p, col, row) {
+    col = (col === undefined ? p.col : col);
+    row = (row === undefined ? p.row : row);
+    const out = [];
+    for (let i = 0; i < p.len; i++) {
+      if (p.orient === 'h') out.push([col + i, row]);
+      else out.push([col, row + i]);
+    }
+    return out;
+  },
+  canPlace: function (p, col, row) {
+    const cells = this.cellsOf(p, col, row);
+    for (let i = 0; i < cells.length; i++) {
+      const c = cells[i][0], r = cells[i][1];
+      if (c < 0 || c >= this.GRID || r < 0 || r >= this.GRID) return false;
+    }
+    for (let i = 0; i < this.pieces.length; i++) {
+      const q = this.pieces[i];
+      if (q === p) continue;
+      const oc = this.cellsOf(q);
+      for (let j = 0; j < oc.length; j++) {
+        for (let k = 0; k < cells.length; k++) {
+          if (oc[j][0] === cells[k][0] && oc[j][1] === cells[k][1]) return false;
+        }
+      }
+    }
+    return true;
+  },
+  pieceAt: function (px, py) {
+    for (let i = 0; i < this.pieces.length; i++) {
+      const p = this.pieces[i];
+      const cells = this.cellsOf(p);
+      for (let j = 0; j < cells.length; j++) {
+        const x = this.OX + cells[j][0] * this.CELL;
+        const y = this.OY + cells[j][1] * this.CELL;
+        if (px >= x && px < x + this.CELL && py >= y && py < y + this.CELL) return i;
+      }
+    }
+    return -1;
+  },
+  update: function () {
+    if (this.state === 'win') {
+      this.winT++;
+      if (click && pointIn(click.x, click.y, 96, 120, 80, 22)) this.reset();
+      if (click && pointIn(click.x, click.y, 208, 120, 80, 22)) setScreen('map');
+      return;
+    }
+    if (click) {
+      const idx = this.pieceAt(click.x, click.y);
+      if (idx >= 0) {
+        this.sel = idx;
+        this.drag = { startCol: this.pieces[idx].col, startRow: this.pieces[idx].row, startMx: click.x, startMy: click.y };
+      } else {
+        this.sel = -1;
+      }
+    }
+    if (this.sel >= 0 && mouse.down) {
+      const p = this.pieces[this.sel];
+      const dpx = mouse.x - (this.drag ? this.drag.startMx : mouse.x);
+      const dpy = mouse.y - (this.drag ? this.drag.startMy : mouse.y);
+      if (p.orient === 'h') {
+        const want = (this.drag ? this.drag.startCol : p.col) + Math.round(dpx / this.CELL);
+        if (want !== p.col && this.canPlace(p, want, p.row)) p.col = want;
+      } else {
+        const want = (this.drag ? this.drag.startRow : p.row) + Math.round(dpy / this.CELL);
+        if (want !== p.row && this.canPlace(p, p.col, want)) p.row = want;
+      }
+    } else if (this.sel >= 0 && !mouse.down) {
+      this.drag = null;
+    }
+    if (this.sel >= 0 && !mouse.down) {
+      const p = this.pieces[this.sel];
+      let dc = 0, dr = 0;
+      if (justPressed['ArrowLeft'] || justPressed['a'] || justPressed['A']) dc = -1;
+      if (justPressed['ArrowRight'] || justPressed['d'] || justPressed['D']) dc = 1;
+      if (justPressed['ArrowUp'] || justPressed['w'] || justPressed['W']) dr = -1;
+      if (justPressed['ArrowDown'] || justPressed['s'] || justPressed['S']) dr = 1;
+      if (p.orient === 'h') dr = 0; else dc = 0;
+      if (dc !== 0 || dr !== 0) {
+        if (this.canPlace(p, p.col + dc, p.row + dr)) { p.col += dc; p.row += dr; }
+      }
+    }
+    const t = this.pieces[0];
+    if (t.col + t.len - 1 >= this.GRID - 1 && this.state === 'play') {
+      this.state = 'win'; addCoins(30); this.winT = 0;
+    }
+  },
+  drawDeskPiece: function (p) {
+    const x = this.OX + p.col * this.CELL;
+    const y = this.OY + p.row * this.CELL;
+    const w = (p.orient === 'h' ? p.len : 1) * this.CELL;
+    const h = (p.orient === 'v' ? p.len : 1) * this.CELL;
+    const pad = 2;
+    rect(x + pad, y + pad, w - pad * 2, h - pad * 2, p.c);
+    rect(x + pad, y + pad, w - pad * 2, 3, PALETTE.dgray);
+    rect(x + pad, y + h - pad - 3, w - pad * 2, 3, PALETTE.dgray);
+    rect(x + pad + 4, y + pad + 5, Math.min(10, w - 14), 7, PALETTE.void);
+    rect(x + pad + 5, y + pad + 6, Math.min(8, w - 16), 5, PALETTE.lblue);
+    if (p.target) {
+      ctx.font = '6px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = PALETTE.void;
+      ctx.fillText('DAVID', x + w / 2, y + h / 2 - 3);
+      ctx.textAlign = 'left';
+    }
+  },
+  draw: function () {
+    rect(0, 0, VW, VH, PALETTE.bg);
+    rect(0, 0, VW, 20, PALETTE.dgray);
+    textCenter('DESK RUSH', 6, 8, PALETTE.gold);
+    const gw = this.GRID * this.CELL;
+    rect(this.OX - 4, this.OY - 4, gw + 8, gw + 8, PALETTE.void);
+    rect(this.OX - 2, this.OY - 2, gw + 4, gw + 4, '#7d4a2a');
+    for (let r = 0; r < this.GRID; r++) {
+      for (let c = 0; c < this.GRID; c++) {
+        const x = this.OX + c * this.CELL;
+        const y = this.OY + r * this.CELL;
+        rect(x, y, this.CELL, this.CELL, (c + r) % 2 === 0 ? '#c4d3da' : '#aebfcc');
+      }
+    }
+    const ex = this.OX + gw;
+    const ey = this.OY + this.exitRow * this.CELL;
+    rect(ex, ey, 8, this.CELL, PALETTE.dgreen);
+    rect(ex + 2, ey + 4, 4, 2, PALETTE.cream);
+    rect(ex + 2, ey + 12, 4, 2, PALETTE.cream);
+    if (this.sel >= 0) {
+      const p = this.pieces[this.sel];
+      const x = this.OX + p.col * this.CELL;
+      const y = this.OY + p.row * this.CELL;
+      const w = (p.orient === 'h' ? p.len : 1) * this.CELL;
+      const h = (p.orient === 'v' ? p.len : 1) * this.CELL;
+      ctx.strokeStyle = PALETTE.cream;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    }
+    this.pieces.forEach(this.drawDeskPiece, this);
+    text('drag desks / arrows. free DAVID ->', 6, VH - 11, 6, PALETTE.cream);
+    drawHUD();
+    if (this.state === 'win') {
+      rect(70, 60, 244, 96, PALETTE.void);
+      rect(72, 62, 240, 92, PALETTE.dgray);
+      textCenter('+30 COINS!', 78, 12, PALETTE.gold);
+      textCenter('David is free!', 98, 7, PALETTE.cream);
+      uiButton('RETRY', 96, 120, 80, 22, PALETTE.dgreen);
+      uiButton('MAP', 208, 120, 80, 22, PALETTE.purple);
+    }
+  }
+};
+
 const SCREENS = {
   intro: {
     draw: function () {
@@ -428,7 +594,7 @@ const SCREENS = {
     }
   },
   crossy: CROSSY,
-  rush: placeholderScreen('RUSH HOUR', 'free the car   [ESC] map'),
+  rush: RUSH,
   fight: placeholderScreen('TURN FIGHTER', 'defeat enemy   [ESC] map'),
   shop: {
     draw: function () {
@@ -477,17 +643,29 @@ function setupInput() {
   canvas.addEventListener('mousedown', function (e) {
     const r = canvas.getBoundingClientRect();
     const scale = r.width / VW;
+    mouse.down = true;
     click = { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
   });
+  window.addEventListener('mouseup', function () { mouse.down = false; });
   canvas.addEventListener('touchstart', function (e) {
+    e.preventDefault();
+    const t = e.touches[0];
+    const r = canvas.getBoundingClientRect();
+    const scale = r.width / VW;
+    mouse.down = true;
+    mouse.x = (t.clientX - r.left) / scale;
+    mouse.y = (t.clientY - r.top) / scale;
+    click = { x: mouse.x, y: mouse.y };
+  }, { passive: false });
+  canvas.addEventListener('touchmove', function (e) {
     e.preventDefault();
     const t = e.touches[0];
     const r = canvas.getBoundingClientRect();
     const scale = r.width / VW;
     mouse.x = (t.clientX - r.left) / scale;
     mouse.y = (t.clientY - r.top) / scale;
-    click = { x: mouse.x, y: mouse.y };
   }, { passive: false });
+  window.addEventListener('touchend', function () { mouse.down = false; });
 }
 
 function init() {
