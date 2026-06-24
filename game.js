@@ -755,29 +755,29 @@ const MINES = {
 
 const FIGHTERS = [
   { name: 'DAVID', role: 'CEO', shirt: PALETTE.blue, hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short',
-    hp: 110, atk: 10, sp: 'EXEC ORDER', spType: 'dmg', spPow: 28 },
+    hp: 160, atk: 15, sp: 'EXEC ORDER', spType: 'dmg', spPow: 42 },
   { name: 'FEIFAN', role: 'Marketing', shirt: PALETTE.orange, hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long',
-    hp: 90, atk: 9, sp: 'VIRAL CAMP', spType: 'drain', spPow: 18 },
+    hp: 140, atk: 13, sp: 'VIRAL CAMP', spType: 'drain', spPow: 28 },
   { name: 'NAO', role: 'Onboarding', shirt: PALETTE.dgreen, hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long',
-    hp: 100, atk: 8, sp: 'TEAM BUILD', spType: 'buff', spPow: 6 },
+    hp: 150, atk: 12, sp: 'TEAM BUILD', spType: 'buff', spPow: 10 },
   { name: 'MISAKI', role: 'Onboarding', shirt: PALETTE.purple, hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long',
-    hp: 95, atk: 9, sp: 'HR REVIEW', spType: 'debuff', spPow: 5 },
+    hp: 145, atk: 13, sp: 'HR REVIEW', spType: 'debuff', spPow: 8 },
   { name: 'MARIO', role: 'Engineer', shirt: PALETTE.red, hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short',
-    hp: 100, atk: 11, sp: 'CODE PUSH', spType: 'dmg', spPow: 22 },
+    hp: 150, atk: 16, sp: 'CODE PUSH', spType: 'dmg', spPow: 34 },
   { name: 'MATTHEW', role: 'Engineer', shirt: PALETTE.lblue, hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short',
-    hp: 95, atk: 10, sp: 'MERGE CONFLICT', spType: 'dmg', spPow: 30 },
+    hp: 145, atk: 15, sp: 'MERGE CONFLICT', spType: 'dmg', spPow: 46 },
   { name: 'RAJ', role: 'Engineer', shirt: PALETTE.green, hair: HAIR_COLORS.brown, skin: SKIN_TONES.brown, gender: 'm', hairStyle: 'short',
-    hp: 100, atk: 10, sp: 'CRASH REPORT', spType: 'dmg', spPow: 24 },
+    hp: 150, atk: 15, sp: 'CRASH REPORT', spType: 'dmg', spPow: 36 },
   { name: 'ATUL', role: 'Engineer', shirt: PALETTE.cream, hair: HAIR_COLORS.brown, skin: SKIN_TONES.brown, gender: 'm', hairStyle: 'short',
-    hp: 105, atk: 9, sp: 'SYS REBOOT', spType: 'heal', spPow: 35 },
+    hp: 155, atk: 13, sp: 'SYS REBOOT', spType: 'heal', spPow: 55 },
   { name: 'TETSUYA', role: 'Engineer', shirt: PALETTE.gray, hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short',
-    hp: 90, atk: 12, sp: 'FINAL BUILD', spType: 'dmg', spPow: 26 }
+    hp: 140, atk: 18, sp: 'FINAL BUILD', spType: 'dmg', spPow: 40 }
 ];
 
 const ENEMY_WAVES = [
-  [{ name: 'SYNTAX ERROR', hp: 45, atk: 6, kind: 'glitch' }],
-  [{ name: 'BUG REPORT', hp: 55, atk: 8, kind: 'glitch' }],
-  [{ name: 'DEVIL BOSS', hp: 100, atk: 14, kind: 'devil' }]
+  [{ name: 'SYNTAX ERROR', hp: 40, atk: 5, kind: 'glitch' }],
+  [{ name: 'BUG REPORT', hp: 50, atk: 7, kind: 'glitch' }],
+  [{ name: 'DEVIL BOSS', hp: 85, atk: 11, kind: 'devil' }]
 ];
 
 function drawGlitchEnemy(x, y) {
@@ -905,6 +905,8 @@ const FIGHT = {
       this.log = [this.enemy.name + ' defeated! Next round...'];
       this.logT = 0;
       this.state = 'wave';
+      const healAmt = Math.floor(this.player.maxhp * 0.3);
+      this.player.hp = Math.min(this.player.maxhp, this.player.hp + healAmt);
       return;
     }
     if (this.player.hp <= 0) { this.state = 'lose'; playSfx('lose'); return; }
