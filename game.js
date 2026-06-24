@@ -420,18 +420,23 @@ const CROSSY = {
 };
 
 const RUSH = {
-  CELL: 24, GRID: 6,
-  OX: 120, OY: 30,
-  exitRow: 2,
+  CELL: 20, GRID: 7,
+  OX: 122, OY: 30,
+  exitRow: 3,
   enter: function () { this.reset(); },
   reset: function () {
     this.state = 'play';
     this.sel = -1;
     this.drag = null;
     this.pieces = [
-      { id: 'T', orient: 'h', len: 2, col: 0, row: 2, target: true, c: PALETTE.gold },
-      { id: 'A', orient: 'v', len: 2, col: 3, row: 2, c: PALETTE.red },
-      { id: 'B', orient: 'v', len: 3, col: 5, row: 1, c: PALETTE.purple }
+      { id: 'P', orient: 'h', len: 1, col: 1, row: 3, target: true, c: PALETTE.gold },
+      { id: 'A', orient: 'v', len: 3, col: 0, row: 0, c: PALETTE.red },
+      { id: 'B', orient: 'h', len: 2, col: 2, row: 1, c: PALETTE.purple },
+      { id: 'C', orient: 'v', len: 2, col: 3, row: 2, c: PALETTE.orange },
+      { id: 'D', orient: 'h', len: 3, col: 3, row: 5, c: PALETTE.lblue },
+      { id: 'E', orient: 'v', len: 3, col: 5, row: 0, c: PALETTE.dgreen },
+      { id: 'F', orient: 'h', len: 2, col: 2, row: 3, c: PALETTE.cream },
+      { id: 'G', orient: 'v', len: 2, col: 6, row: 2, c: PALETTE.blue }
     ];
     this.winT = 0;
   },
@@ -527,20 +532,16 @@ const RUSH = {
     const y = this.OY + p.row * this.CELL;
     const w = (p.orient === 'h' ? p.len : 1) * this.CELL;
     const h = (p.orient === 'v' ? p.len : 1) * this.CELL;
+    if (p.target) {
+      drawPerson(x + 3, y + 1, p.c, PALETTE.gold);
+      return;
+    }
     const pad = 2;
     rect(x + pad, y + pad, w - pad * 2, h - pad * 2, p.c);
     rect(x + pad, y + pad, w - pad * 2, 3, PALETTE.dgray);
     rect(x + pad, y + h - pad - 3, w - pad * 2, 3, PALETTE.dgray);
     rect(x + pad + 4, y + pad + 5, Math.min(10, w - 14), 7, PALETTE.void);
     rect(x + pad + 5, y + pad + 6, Math.min(8, w - 16), 5, PALETTE.lblue);
-    if (p.target) {
-      ctx.font = '6px "Press Start 2P", monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = PALETTE.void;
-      ctx.fillText('DAVID', x + w / 2, y + h / 2 - 3);
-      ctx.textAlign = 'left';
-    }
   },
   draw: function () {
     rect(0, 0, VW, VH, PALETTE.bg);
@@ -572,13 +573,13 @@ const RUSH = {
       ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
     }
     this.pieces.forEach(this.drawDeskPiece, this);
-    text('drag desks / arrows. free DAVID ->', 6, VH - 11, 6, PALETTE.cream);
+    text('drag desks / arrows. get to the EXIT ->', 6, VH - 11, 6, PALETTE.cream);
     drawHUD();
     if (this.state === 'win') {
       rect(70, 60, 244, 96, PALETTE.void);
       rect(72, 62, 240, 92, PALETTE.dgray);
       textCenter('+30 COINS!', 78, 12, PALETTE.gold);
-      textCenter('David is free!', 98, 7, PALETTE.cream);
+      textCenter('you escaped!', 98, 7, PALETTE.cream);
       uiButton('RETRY', 96, 120, 80, 22, PALETTE.dgreen);
       uiButton('MAP', 208, 120, 80, 22, PALETTE.purple);
     }
