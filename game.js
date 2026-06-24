@@ -23,7 +23,7 @@ let canvas, ctx;
 let state = { coins: 0, plushies: {}, screen: 'intro' };
 let keys = {};
 let justPressed = {};
-let mouse = { x: 0, y: 0, down: false };
+let mouse = { x: 0, y: 0, down: false, wheel: 0 };
 let click = null;
 
 function loadState() {
@@ -1011,6 +1011,119 @@ const LOOTBOX = {
   }
 };
 
+const COLLECTION = {
+  scroll: 0,
+  enter: function () { this.scroll = 0; },
+  draw: function () {
+    rect(0, 0, VW, VH, PALETTE.bg);
+    rect(0, 0, VW, 20, PALETTE.dgray);
+    textCenter('COLLECTION', 6, 8, PALETTE.gold);
+    const poolKeys = ['interns', 'suits', 'engineers'];
+    let y = 26;
+    const cellW = 36, cellH = 40, perRow = 8, gap = 3;
+    const startX = 10;
+    let totalOwned = 0, totalPlushies = 0;
+    for (let pi = 0; pi < poolKeys.length; pi++) {
+      const pool = PLUSHIE_POOLS[poolKeys[pi]];
+      const startY = y - this.scroll;
+      if (startY > -20 && startY < VH) {
+        rect(6, startY - 2, VW - 12, 1, pool.color);
+        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = pool.color;
+        ctx.fillText(pool.label, 10, startY + 2);
+        let poolOwned = 0;
+        for (let m = 0; m < pool.members.length; m++) {
+          const key = poolKeys[pi] + ':' + pool.members[m];
+          if (state.plushies[key]) poolOwned++;
+        }
+        totalPlushies += pool.members.length;
+        totalOwned += poolOwned;
+        ctx.textAlign = 'right';
+        ctx.fillStyle = PALETTE.cream;
+        ctx.fillText(poolOwned + '/' + pool.members.length, VW - 12, startY + 2);
+        ctx.textAlign = 'left';
+      }
+      y += 14;
+      for (let m = 0; m < pool.members.length; m++) {
+        const col = m % perRow;
+        const row = Math.floor(m / perRow);
+        const x = startX + col * (cellW + gap);
+        const cellY = y + row * (cellH + gap) - this.scroll;
+        if (cellY > -cellH && cellY < VH) {
+          const key = poolKeys[pi] + ':' + pool.members[m];
+          const owned = state.plushies[key];
+          rect(x, cellY, cellW, cellH, PALETTE.dgray);
+          rect(x + 1, cellY + 1, cellW - 2, cellH - 2, PALETTE.void);
+          if (owned) {
+            drawPerson(x + 11, cellY + 6, pool.color, PALETTE.gold);
+            if (owned.count > 1) {
+              ctx.font = '5px "Press Start 2P", monospace';
+              ctx.textAlign = 'right';
+              ctx.textBaseline = 'top';
+              ctx.fillStyle = PALETTE.gold;
+              ctx.fillText('x' + owned.count, x + cellW - 3, cellY + 2);
+              ctx.textAlign = 'left';
+            }
+            ctx.font = '5px "Press Start 2P", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = PALETTE.cream;
+            ctx.fillText(pool.members[m].substring(0, 6), x + cellW / 2, cellY + 26);
+            ctx.textAlign = 'left';
+          } else {
+            ctx.globalAlpha = 0.5;
+            drawPerson(x + 11, cellY + 6, PALETTE.dgray, PALETTE.dgray);
+            ctx.globalAlpha = 1;
+            ctx.font = '5px "Press Start 2P", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = PALETTE.dgray;
+            ctx.fillText('???', x + cellW / 2, cellY + 26);
+            ctx.textAlign = 'left';
+          }
+        }
+        totalPlushies++;
+      }
+      y += Math.ceil(pool.members.length / perRow) * (cellH + gap) + 6;
+    }
+    const maxScroll = Math.max(0, y - VH + 10);
+    if (maxScroll > 0) {
+      const sbH = VH - 30;
+      rect(VW - 4, 24, 3, sbH, PALETTE.dgray);
+      const thumbH = Math.max(10, sbH * VH / (y + 10));
+      const thumbY = 24 + (sbH - thumbH) * (this.scroll / maxScroll);
+      rect(VW - 4, thumbY, 3, thumbH, PALETTE.cream);
+    }
+    uiButton('MAP', 6, 4, 50, 16, PALETTE.purple);
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = PALETTE.gold;
+    ctx.fillText(totalOwned + '/' + totalPlushies, VW - 60, 6);
+    ctx.textAlign = 'left';
+    drawHUD();
+  },
+  update: function () {
+    if (click && pointIn(click.x, click.y, 6, 4, 50, 16)) { setScreen('map'); return; }
+    if (click && pointIn(click.x, click.y, VW - 6, 24, 6, VH - 30)) {
+      this.dragging = true;
+      return;
+    }
+    if (mouse.down && this.dragging) {
+      const sbH = VH - 30;
+      this.scroll = Math.max(0, Math.min(300, ((mouse.y - 24) / sbH) * 300));
+    } else {
+      this.dragging = false;
+    }
+    if (mouse.wheel) {
+      this.scroll = Math.max(0, Math.min(300, this.scroll + mouse.wheel));
+      mouse.wheel = 0;
+    }
+  }
+};
+
 const SCREENS = {
   intro: {
     draw: function () {
@@ -1046,7 +1159,7 @@ const SCREENS = {
   fight: FIGHT,
   shop: SHOP,
   lootbox: LOOTBOX,
-  collection: placeholderScreen('COLLECTION', 'your plushies   [ESC] map')
+  collection: COLLECTION
 };
 
 function loop(t) {
@@ -1084,6 +1197,10 @@ function setupInput() {
     click = { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
   });
   window.addEventListener('mouseup', function () { mouse.down = false; });
+  canvas.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    mouse.wheel += (e.deltaY > 0 ? 12 : -12);
+  }, { passive: false });
   canvas.addEventListener('touchstart', function (e) {
     e.preventDefault();
     const t = e.touches[0];
