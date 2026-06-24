@@ -20,7 +20,7 @@ const PALETTE = {
 const SCREEN_ORDER = ['intro', 'map', 'crossy', 'mines', 'fight', 'shop', 'collection'];
 
 let canvas, ctx;
-let state = { coins: 0, plushies: {}, screen: 'intro' };
+let state = { coins: 0, plushies: {}, unlockedFighters: ['David'], screen: 'intro' };
 let keys = {};
 let justPressed = {};
 let mouse = { x: 0, y: 0, down: false, wheel: 0 };
@@ -33,14 +33,30 @@ function loadState() {
       const s = JSON.parse(raw);
       state.coins = s.coins || 0;
       state.plushies = s.plushies || {};
+      state.unlockedFighters = s.unlockedFighters || ['David'];
     }
   } catch (e) {}
 }
 
 function saveState() {
   try {
-    localStorage.setItem('arcAIdia_save', JSON.stringify({ coins: state.coins, plushies: state.plushies }));
+    localStorage.setItem('arcAIdia_save', JSON.stringify({ coins: state.coins, plushies: state.plushies, unlockedFighters: state.unlockedFighters }));
   } catch (e) {}
+}
+
+function isFighterUnlocked(name) {
+  return state.unlockedFighters.indexOf(name) !== -1;
+}
+
+function tryUnlockFighter(name) {
+  const upper = name.toUpperCase();
+  const match = FIGHTERS.find(function (f) { return f.name === upper; });
+  if (match && !isFighterUnlocked(match.name)) {
+    state.unlockedFighters.push(match.name);
+    saveState();
+    return true;
+  }
+  return false;
 }
 
 let transition = { active: false, t: 0, max: 20, target: null, fromScreen: null };
@@ -867,7 +883,7 @@ function drawFighterPortrait(f, x, y, sel) {
 
 const FIGHT = {
   sub: 'select', selIdx: -1,
-  enter: function () { this.sub = 'select'; this.selIdx = -1; this.startBattle(); },
+  enter: function () { this.sub = 'select'; this.selIdx = 0; },
   startBattle: function () {
     const f = FIGHTERS[this.selIdx >= 0 ? this.selIdx : 0];
     this.fighter = f;
@@ -887,6 +903,7 @@ const FIGHT = {
     this.logT = 0;
   },
   selectFighter: function (i) {
+    if (!isFighterUnlocked(FIGHTERS[i].name)) return;
     this.selIdx = i; this.startBattle(); this.sub = 'battle';
   },
   doAttack: function () {
@@ -1005,27 +1022,55 @@ const FIGHT = {
     rect(0, 0, VW, VH, PALETTE.bg);
     rect(0, 0, VW, 20, PALETTE.dgray);
     textCenter('CHOOSE FIGHTER', 6, 8, PALETTE.gold);
+    const unlockedCount = FIGHTERS.filter(function (f) { return isFighterUnlocked(f.name); }).length;
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = PALETTE.gold;
+    ctx.fillText(unlockedCount + '/' + FIGHTERS.length + ' unlocked', VW - 12, 6);
+    ctx.textAlign = 'left';
     for (let i = 0; i < FIGHTERS.length; i++) {
       const f = FIGHTERS[i];
       const col = i % 5, row = Math.floor(i / 5);
       const x = 14 + col * 74, y = 30 + row * 64;
       const sel = (this.selIdx === i);
       const hover = pointIn(mouse.x, mouse.y, x, y, 36, 40);
-      drawFighterPortrait(f, x, y, sel || hover);
-      if (hover || sel) {
-        ctx.font = '5px "Press Start 2P", monospace';
+      const unlocked = isFighterUnlocked(f.name);
+      const cx = Math.floor(x), cy = Math.floor(y);
+      rect(cx, cy, 36, 40, unlocked ? (sel || hover ? PALETTE.gold : PALETTE.dgray) : PALETTE.dgray);
+      rect(cx + 1, cy + 1, 34, 38, unlocked ? PALETTE.void : '#2a2d4a');
+      if (unlocked) {
+        drawPerson(cx + 11, cy + 8, f);
+        ctx.font = '6px "Press Start 2P", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillStyle = PALETTE.lblue;
-        ctx.fillText(f.role, x + 18, y + 36);
-        ctx.textAlign = 'left';
+        ctx.fillStyle = sel || hover ? PALETTE.gold : PALETTE.cream;
+        ctx.fillText(f.name, cx + 18, cy + 28);
+        if (hover || sel) {
+          ctx.font = '5px "Press Start 2P", monospace';
+          ctx.fillStyle = PALETTE.lblue;
+          ctx.fillText(f.role, cx + 18, cy + 36);
+        }
+      } else {
+        ctx.globalAlpha = 0.4;
+        drawPerson(cx + 11, cy + 8, { shirt: '#2a2d4a', hair: '#2a2d4a', skin: '#2a2d4a', gender: 'm', hairStyle: 'short' });
+        ctx.globalAlpha = 1;
+        ctx.font = '7px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.dgray;
+        ctx.fillText('?', cx + 18, cy + 26);
+        ctx.font = '5px "Press Start 2P", monospace';
+        ctx.fillStyle = PALETTE.dgray;
+        ctx.fillText('LOCKED', cx + 18, cy + 34);
       }
+      ctx.textAlign = 'left';
     }
-    if (this.selIdx >= 0) {
+    if (this.selIdx >= 0 && isFighterUnlocked(FIGHTERS[this.selIdx].name)) {
       const f = FIGHTERS[this.selIdx];
       textCenter(f.name + ' - ' + f.sp, VH - 16, 6, PALETTE.gold);
     } else {
-      textCenter('click a character', VH - 16, 6, PALETTE.cream);
+      textCenter('unlock fighters from lootboxes!', VH - 16, 6, PALETTE.cream);
     }
     drawHUD();
   },
@@ -1385,7 +1430,7 @@ const FIGHT = {
 const PLUSHIE_POOLS = {
   interns: {
     label: 'INTERNS', color: PALETTE.green, price: 50,
-    members: ['Noah', 'Noa', 'Saria', 'Sakurako', 'Shinon', 'Richard', 'Samer', 'Lamu']
+    members: ['Noah', 'Noa', 'Saria', 'Sakurako', 'Shinon', 'Richard', 'Samer', 'Lamu', 'Misaki']
   },
   suits: {
     label: 'SUITS', color: PALETTE.orange, price: 150,
@@ -1410,8 +1455,9 @@ function rollLootbox(poolKey) {
   } else {
     state.plushies[key] = { pool: poolKey, name: name, count: 1 };
   }
+  var fighterUnlocked = tryUnlockFighter(name);
   saveState();
-  lootboxResult = { poolKey: poolKey, name: name, t: 0 };
+  lootboxResult = { poolKey: poolKey, name: name, t: 0, fighterUnlock: fighterUnlocked };
   setScreen('lootbox');
 }
 
@@ -1524,11 +1570,20 @@ const LOOTBOX = {
       ctx.font = '6px "Press Start 2P", monospace';
       ctx.fillStyle = pool.color;
       ctx.fillText(pool.label, cx, 56);
-      if (!isNew) {
+      if (r.fighterUnlock) {
+        ctx.fillStyle = PALETTE.gold;
+        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.fillText('FIGHTER UNLOCKED!', cx, 136);
+        ctx.fillStyle = PALETTE.cream;
+        ctx.font = '6px "Press Start 2P", monospace';
+        ctx.fillText('play as ' + r.name.toUpperCase(), cx, 150);
+      } else if (!isNew) {
         ctx.fillStyle = PALETTE.gray;
+        ctx.font = '6px "Press Start 2P", monospace';
         ctx.fillText('DUPLICATE x' + owned.count, cx, 148);
       } else {
         ctx.fillStyle = PALETTE.gold;
+        ctx.font = '6px "Press Start 2P", monospace';
         ctx.fillText('NEW!', cx, 148);
       }
       ctx.textAlign = 'left';
@@ -1600,6 +1655,11 @@ const COLLECTION = {
           if (owned) {
             const cl = charLooks(pool.members[m]);
             drawPerson(x + 11, cellY + 6, { shirt: pool.color, hair: cl.hair, skin: cl.skin, gender: cl.gender, hairStyle: cl.hairStyle });
+            const isFighter = FIGHTERS.find(function (f) { return f.name === pool.members[m].toUpperCase(); });
+            if (isFighter) {
+              rect(x + 1, cellY + 1, 4, 4, PALETTE.gold);
+              rect(x + 2, cellY + 2, 2, 2, PALETTE.void);
+            }
             if (owned.count > 1) {
               ctx.font = '5px "Press Start 2P", monospace';
               ctx.textAlign = 'right';
