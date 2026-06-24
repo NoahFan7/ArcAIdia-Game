@@ -1,0 +1,12 @@
+{
+  "name": "arcaidia-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ArcAIdia arcade game",
+  "scripts": {
+    "start": "serve -l ${PORT:-3000} ."
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}
