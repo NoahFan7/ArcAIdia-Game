@@ -262,14 +262,14 @@ function drawPerson(x, y, shirt, hair) {
 }
 
 const CROSSY = {
-  CELL: 18, COLS: 21, ROWS: 10,
-  OX: 3, OY: 24,
+  CELL: 14, COLS: 27, ROWS: 14,
+  OX: 3, OY: 20,
   enter: function () { this.reset(); },
   cellX: function (c) { return this.OX + c * this.CELL; },
   cellY: function (r) { return this.OY + r * this.CELL; },
   reset: function () {
-    this.pcol = 10; this.prow = 9;
-    this.px = this.cellX(10); this.py = this.cellY(9);
+    this.pcol = 13; this.prow = 13;
+    this.px = this.cellX(13); this.py = this.cellY(13);
     this.state = 'play';
     this.flash = 0;
     this.buildLanes();
@@ -280,7 +280,7 @@ const CROSSY = {
     const hairs = ['#3a2a1a', '#6b4a2a', '#1a1c2c', '#8a5a2a'];
     for (let r = 1; r < this.ROWS - 1; r++) {
       const dir = (r % 2 === 0) ? 1 : -1;
-      const speed = 0.022 + r * 0.0035;
+      const speed = 0.04 + r * 0.006;
       const count = 2 + (r % 2);
       const gap = this.COLS / count;
       const workers = [];
@@ -355,15 +355,37 @@ const CROSSY = {
     for (let r = 0; r < this.ROWS; r++) {
       const y = this.cellY(r);
       let c = (r % 2 === 0) ? '#c4d3da' : '#aebfcc';
-      if (r === 0) c = PALETTE.dgreen;
+      if (r === 0) c = PALETTE.dgray;
       if (r === this.ROWS - 1) c = '#9aa6b8';
       rect(this.OX, y, this.COLS * this.CELL, this.CELL, c);
     }
+    // train platform (row 0)
+    const tY = this.cellY(0);
+    rect(this.OX, tY, this.COLS * this.CELL, this.CELL, '#5a3a2a');
+    rect(this.OX, tY + this.CELL - 2, this.COLS * this.CELL, 2, '#3a2a1a');
+    // train body
+    const trainX = this.OX + 2;
+    rect(trainX, tY - 10, this.COLS * this.CELL - 4, this.CELL + 8, PALETTE.red);
+    rect(trainX, tY - 10, this.COLS * this.CELL - 4, 3, PALETTE.dgray);
+    rect(trainX, tY - 4, this.COLS * this.CELL - 4, 2, PALETTE.gold);
+    // train windows
+    const winW = 8, winGap = 4, winY = tY - 8;
+    for (let wx = trainX + 4; wx < trainX + this.COLS * this.CELL - 8; wx += winW + winGap) {
+      rect(wx, winY, winW, 5, PALETTE.lblue);
+      rect(wx + 1, winY + 1, 2, 2, PALETTE.cream);
+    }
+    // train front (locomotive nose on left)
+    rect(trainX - 3, tY - 8, 6, this.CELL + 4, PALETTE.red);
+    rect(trainX - 3, tY - 10, 6, 3, PALETTE.dgray);
+    rect(trainX - 2, tY - 6, 4, 4, PALETTE.gold);
+    // train wheels
+    rect(trainX + 2, tY + this.CELL - 2, 5, 4, PALETTE.dgray);
+    rect(trainX + this.COLS * this.CELL - 10, tY + this.CELL - 2, 5, 4, PALETTE.dgray);
     ctx.font = '7px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = PALETTE.cream;
-    ctx.fillText('EXIT', this.OX + this.COLS * this.CELL / 2, this.cellY(0) + 9);
+    ctx.fillStyle = PALETTE.gold;
+    ctx.fillText('TRAIN', this.OX + this.COLS * this.CELL / 2, tY + this.CELL / 2);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     for (let i = 0; i < this.lanes.length; i++) {
@@ -390,7 +412,7 @@ const CROSSY = {
       rect(70, 60, 244, 96, PALETTE.void);
       rect(72, 62, 240, 92, PALETTE.dgray);
       textCenter(this.state === 'win' ? '+10 COINS!' : 'CAUGHT!', 78, 12, PALETTE.gold);
-      textCenter(this.state === 'win' ? 'David made it!' : 'a coworker got you', 98, 7, PALETTE.cream);
+      textCenter(this.state === 'win' ? 'David caught the train!' : 'a coworker got you', 98, 7, PALETTE.cream);
       uiButton('RETRY', 96, 120, 80, 22, PALETTE.dgreen);
       uiButton('MAP', 208, 120, 80, 22, PALETTE.purple);
     }
