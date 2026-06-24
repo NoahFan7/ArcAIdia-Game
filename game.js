@@ -419,6 +419,56 @@ const CROSSY = {
   }
 };
 
+const RUSH_PUZZLES = [
+  [
+    { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
+    { id: 'A', orient: 'v', len: 2, col: 2, row: 2, c: PALETTE.red },
+    { id: 'B', orient: 'v', len: 2, col: 4, row: 2, c: PALETTE.orange },
+    { id: 'C', orient: 'h', len: 2, col: 5, row: 0, c: PALETTE.purple },
+    { id: 'D', orient: 'h', len: 3, col: 1, row: 6, c: PALETTE.dgreen },
+    { id: 'E', orient: 'v', len: 3, col: 6, row: 1, c: PALETTE.lblue }
+  ],
+  [
+    { id: 'P', orient: 'h', len: 1, col: 1, row: 3, target: true, c: PALETTE.gold },
+    { id: 'A', orient: 'v', len: 3, col: 3, row: 1, c: PALETTE.red },
+    { id: 'B', orient: 'h', len: 2, col: 4, row: 5, c: PALETTE.purple },
+    { id: 'C', orient: 'v', len: 2, col: 5, row: 2, c: PALETTE.orange },
+    { id: 'D', orient: 'h', len: 3, col: 0, row: 0, c: PALETTE.lblue },
+    { id: 'E', orient: 'v', len: 2, col: 6, row: 0, c: PALETTE.blue },
+    { id: 'F', orient: 'h', len: 2, col: 0, row: 5, c: PALETTE.cream }
+  ],
+  [
+    { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
+    { id: 'A', orient: 'v', len: 2, col: 2, row: 2, c: PALETTE.red },
+    { id: 'B', orient: 'v', len: 3, col: 4, row: 1, c: PALETTE.purple },
+    { id: 'C', orient: 'h', len: 2, col: 5, row: 5, c: PALETTE.orange },
+    { id: 'D', orient: 'v', len: 2, col: 6, row: 2, c: PALETTE.lblue },
+    { id: 'E', orient: 'h', len: 3, col: 0, row: 0, c: PALETTE.dgreen },
+    { id: 'F', orient: 'h', len: 2, col: 1, row: 6, c: PALETTE.cream },
+    { id: 'G', orient: 'v', len: 2, col: 3, row: 4, c: PALETTE.blue }
+  ],
+  [
+    { id: 'P', orient: 'h', len: 1, col: 2, row: 3, target: true, c: PALETTE.gold },
+    { id: 'A', orient: 'v', len: 3, col: 4, row: 0, c: PALETTE.red },
+    { id: 'B', orient: 'v', len: 2, col: 5, row: 2, c: PALETTE.purple },
+    { id: 'C', orient: 'h', len: 2, col: 0, row: 0, c: PALETTE.orange },
+    { id: 'D', orient: 'v', len: 2, col: 3, row: 2, c: PALETTE.lblue },
+    { id: 'E', orient: 'h', len: 3, col: 2, row: 5, c: PALETTE.dgreen },
+    { id: 'F', orient: 'v', len: 2, col: 6, row: 0, c: PALETTE.blue },
+    { id: 'G', orient: 'h', len: 2, col: 0, row: 3, c: PALETTE.cream }
+  ],
+  [
+    { id: 'P', orient: 'h', len: 1, col: 1, row: 3, target: true, c: PALETTE.gold },
+    { id: 'A', orient: 'v', len: 2, col: 3, row: 2, c: PALETTE.red },
+    { id: 'B', orient: 'h', len: 2, col: 4, row: 0, c: PALETTE.purple },
+    { id: 'C', orient: 'v', len: 3, col: 5, row: 1, c: PALETTE.orange },
+    { id: 'D', orient: 'h', len: 2, col: 0, row: 6, c: PALETTE.lblue },
+    { id: 'E', orient: 'v', len: 2, col: 6, row: 2, c: PALETTE.dgreen },
+    { id: 'F', orient: 'h', len: 3, col: 2, row: 5, c: PALETTE.blue },
+    { id: 'G', orient: 'v', len: 2, col: 2, row: 0, c: PALETTE.cream }
+  ]
+];
+
 const RUSH = {
   CELL: 20, GRID: 7,
   OX: 122, OY: 30,
@@ -428,16 +478,10 @@ const RUSH = {
     this.state = 'play';
     this.sel = -1;
     this.drag = null;
-    this.pieces = [
-      { id: 'P', orient: 'h', len: 1, col: 1, row: 3, target: true, c: PALETTE.gold },
-      { id: 'A', orient: 'v', len: 3, col: 0, row: 0, c: PALETTE.red },
-      { id: 'B', orient: 'h', len: 2, col: 2, row: 1, c: PALETTE.purple },
-      { id: 'C', orient: 'v', len: 2, col: 3, row: 2, c: PALETTE.orange },
-      { id: 'D', orient: 'h', len: 3, col: 3, row: 5, c: PALETTE.lblue },
-      { id: 'E', orient: 'v', len: 3, col: 5, row: 0, c: PALETTE.dgreen },
-      { id: 'F', orient: 'h', len: 2, col: 2, row: 3, c: PALETTE.cream },
-      { id: 'G', orient: 'v', len: 2, col: 6, row: 2, c: PALETTE.blue }
-    ];
+    this.puzzleIdx = Math.floor(Math.random() * RUSH_PUZZLES.length);
+    this.pieces = RUSH_PUZZLES[this.puzzleIdx].map(function (p) {
+      return { id: p.id, orient: p.orient, len: p.len, col: p.col, row: p.row, target: p.target, c: p.c };
+    });
     this.winT = 0;
   },
   cellsOf: function (p, col, row) {
@@ -573,7 +617,7 @@ const RUSH = {
       ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
     }
     this.pieces.forEach(this.drawDeskPiece, this);
-    text('drag desks / arrows. get to the EXIT ->', 6, VH - 11, 6, PALETTE.cream);
+    text('puzzle ' + (this.puzzleIdx + 1) + '/5  |  drag desks / arrows', 6, VH - 11, 5, PALETTE.cream);
     drawHUD();
     if (this.state === 'win') {
       rect(70, 60, 244, 96, PALETTE.void);
