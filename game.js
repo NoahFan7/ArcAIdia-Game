@@ -267,20 +267,100 @@ const MAP_ZONES = [
   { id: 'fight', x: 148, y: 98, w: 88, h: 48, label: 'FIGHTER', icon: 'sword', color: PALETTE.red }
 ];
 
-function drawPerson(x, y, shirt, hair) {
-  const cx = Math.floor(x) + 2;
+const SKIN_TONES = { white: PALETTE.cream, tan: '#d4a574', brown: '#a06b3c' };
+const HAIR_COLORS = { blonde: PALETTE.gold, black: '#1a1c2c', brown: '#5a3a1a', red: PALETTE.red };
+
+const CHAR_DATA = {
+  David:      { hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short' },
+  Feifan:     { hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long' },
+  Nao:        { hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long' },
+  Misaki:     { hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long' },
+  Mario:      { hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short' },
+  Matthew:    { hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short' },
+  Raj:        { hair: HAIR_COLORS.brown, skin: SKIN_TONES.brown, gender: 'm', hairStyle: 'short' },
+  Atul:       { hair: HAIR_COLORS.brown, skin: SKIN_TONES.brown, gender: 'm', hairStyle: 'short' },
+  Tetsuya:    { hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short' },
+  Noah:       { hair: HAIR_COLORS.black, skin: SKIN_TONES.tan, gender: 'm', hairStyle: 'short' },
+  Noa:        { hair: HAIR_COLORS.red, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short' },
+  Saria:      { hair: HAIR_COLORS.brown, skin: SKIN_TONES.tan, gender: 'f', hairStyle: 'long' },
+  Sakurako:   { hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long' },
+  Shinon:     { hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long' },
+  Richard:    { hair: HAIR_COLORS.black, skin: SKIN_TONES.tan, gender: 'm', hairStyle: 'short' },
+  Samer:      { hair: HAIR_COLORS.black, skin: SKIN_TONES.brown, gender: 'm', hairStyle: 'short' },
+  Lamu:       { hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long' },
+  'Hagio-San':{ hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short' }
+};
+
+function charLooks(name) {
+  return CHAR_DATA[name] || { hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short' };
+}
+
+function drawPerson(x, y, opts) {
+  if (typeof opts === 'string') {
+    opts = { shirt: opts, hair: arguments[3] || HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short' };
+  }
+  const cx = Math.floor(x);
   const yy = Math.floor(y);
-  rect(cx + 1, yy + 13, 5, 4, '#3a2a1a');
-  rect(cx + 8, yy + 13, 5, 4, '#3a2a1a');
-  rect(cx, yy + 8, 14, 6, shirt);
-  rect(cx - 1, yy + 9, 2, 4, shirt);
-  rect(cx + 13, yy + 9, 2, 4, shirt);
-  rect(cx + 3, yy + 2, 8, 7, PALETTE.cream);
-  rect(cx + 3, yy, 8, 3, hair);
-  rect(cx + 2, yy + 1, 1, 2, hair);
-  rect(cx + 11, yy + 1, 1, 2, hair);
+  const shirt = opts.shirt || PALETTE.blue;
+  const hair = opts.hair || HAIR_COLORS.black;
+  const skin = opts.skin || SKIN_TONES.white;
+  const female = opts.gender === 'f';
+  const longHair = opts.hairStyle === 'long' || female;
+  const flash = opts.flash;
+  const s = flash ? PALETTE.white : skin;
+  const sh = flash ? PALETTE.white : shirt;
+  const hr = flash ? PALETTE.white : hair;
+
+  if (female) {
+    rect(cx + 3, yy + 15, 10, 3, '#2a2a3a');
+    rect(cx + 2, yy + 17, 12, 2, '#2a2a3a');
+    rect(cx + 4, yy + 19, 2, 2, '#1a1a2a');
+    rect(cx + 10, yy + 19, 2, 2, '#1a1a2a');
+  } else {
+    rect(cx + 3, yy + 15, 4, 4, '#2a2a3a');
+    rect(cx + 9, yy + 15, 4, 4, '#2a2a3a');
+    rect(cx + 3, yy + 18, 4, 1, '#1a1a2a');
+    rect(cx + 9, yy + 18, 4, 1, '#1a1a2a');
+  }
+  if (female) {
+    rect(cx + 3, yy + 10, 10, 5, sh);
+    rect(cx + 4, yy + 13, 8, 2, sh);
+    rect(cx + 5, yy + 10, 6, 1, '#3a3a4a');
+  } else {
+    rect(cx + 2, yy + 10, 12, 5, sh);
+    rect(cx + 3, yy + 13, 10, 1, '#3a3a4a');
+    rect(cx + 6, yy + 13, 4, 2, sh);
+  }
+  rect(cx + 1, yy + 10, 2, 5, sh);
+  rect(cx + 13, yy + 10, 2, 5, sh);
+  rect(cx + 1, yy + 14, 2, 2, s);
+  rect(cx + 13, yy + 14, 2, 2, s);
+  rect(cx + 6, yy + 8, 4, 2, s);
+  rect(cx + 3, yy + 2, 10, 7, s);
+  if (longHair) {
+    rect(cx + 2, yy, 12, 4, hr);
+    rect(cx + 1, yy + 1, 2, 11, hr);
+    rect(cx + 13, yy + 1, 2, 11, hr);
+    rect(cx + 3, yy + 2, 3, 2, hr);
+    rect(cx + 10, yy + 2, 3, 2, hr);
+    rect(cx + 3, yy + 6, 1, 3, s);
+    rect(cx + 12, yy + 6, 1, 3, s);
+  } else {
+    rect(cx + 2, yy, 12, 3, hr);
+    rect(cx + 2, yy + 1, 1, 3, hr);
+    rect(cx + 13, yy + 1, 1, 3, hr);
+    rect(cx + 3, yy + 2, 1, 1, hr);
+    rect(cx + 12, yy + 2, 1, 1, hr);
+  }
+  rect(cx + 4, yy + 4, 2, 1, hr);
+  rect(cx + 10, yy + 4, 2, 1, hr);
   rect(cx + 5, yy + 5, 1, 1, PALETTE.void);
-  rect(cx + 8, yy + 5, 1, 1, PALETTE.void);
+  rect(cx + 10, yy + 5, 1, 1, PALETTE.void);
+  if (female) {
+    rect(cx + 6, yy + 6, 1, 1, PALETTE.red);
+    rect(cx + 9, yy + 6, 1, 1, PALETTE.red);
+  }
+  rect(cx + 6, yy + 7, 4, 1, '#8a4a4a');
 }
 
 const CROSSY = {
@@ -300,6 +380,8 @@ const CROSSY = {
     this.lanes = [];
     const shirts = [PALETTE.red, PALETTE.orange, PALETTE.purple, PALETTE.dgreen, PALETTE.lblue];
     const hairs = ['#3a2a1a', '#6b4a2a', '#1a1c2c', '#8a5a2a'];
+    const skins = [SKIN_TONES.white, SKIN_TONES.tan, SKIN_TONES.brown];
+    const genders = ['m', 'f'];
     for (let r = 1; r < this.ROWS - 1; r++) {
       const dir = (r % 2 === 0) ? 1 : -1;
       const speed = 0.04 + r * 0.006;
@@ -307,11 +389,15 @@ const CROSSY = {
       const gap = this.COLS / count;
       const workers = [];
       for (let i = 0; i < count; i++) {
+        const g = genders[(r + i) % 2];
         workers.push({
           col: (i * gap + r * 0.7) % this.COLS,
           dir: dir, speed: speed,
           shirt: shirts[(r + i) % shirts.length],
-          hair: hairs[(i + r) % hairs.length]
+          hair: hairs[(i + r) % hairs.length],
+          skin: skins[(r + i * 2) % skins.length],
+          gender: g,
+          hairStyle: g === 'f' ? 'long' : 'short'
         });
       }
       this.lanes.push({ row: r, workers: workers });
@@ -414,13 +500,13 @@ const CROSSY = {
       const lane = this.lanes[i];
       for (let j = 0; j < lane.workers.length; j++) {
         const w = lane.workers[j];
-        drawPerson(this.cellX(w.col), this.cellY(lane.row), w.shirt, w.hair);
+        drawPerson(this.cellX(w.col), this.cellY(lane.row), w);
       }
     }
     if (this.flash > 0 && (this.flash % 4) < 2) {
-      drawPerson(this.px, this.py, PALETTE.white, PALETTE.gold);
+      drawPerson(this.px, this.py, { shirt: PALETTE.blue, hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short', flash: true });
     } else {
-      drawPerson(this.px, this.py, PALETTE.blue, PALETTE.gold);
+      drawPerson(this.px, this.py, { shirt: PALETTE.blue, hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short' });
     }
     ctx.font = '6px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
@@ -637,23 +723,23 @@ const MINES = {
 };
 
 const FIGHTERS = [
-  { name: 'DAVID', role: 'CEO', shirt: PALETTE.blue, hair: PALETTE.gold, skin: PALETTE.cream,
+  { name: 'DAVID', role: 'CEO', shirt: PALETTE.blue, hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short',
     hp: 110, atk: 10, sp: 'EXEC ORDER', spType: 'dmg', spPow: 28 },
-  { name: 'FEIFAN', role: 'Marketing', shirt: PALETTE.orange, hair: PALETTE.gold, skin: PALETTE.cream,
+  { name: 'FEIFAN', role: 'Marketing', shirt: PALETTE.orange, hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long',
     hp: 90, atk: 9, sp: 'VIRAL CAMP', spType: 'drain', spPow: 18 },
-  { name: 'NAO', role: 'Onboarding', shirt: PALETTE.dgreen, hair: '#3a2a1a', skin: PALETTE.cream,
+  { name: 'NAO', role: 'Onboarding', shirt: PALETTE.dgreen, hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long',
     hp: 100, atk: 8, sp: 'TEAM BUILD', spType: 'buff', spPow: 6 },
-  { name: 'MISAKI', role: 'Onboarding', shirt: PALETTE.purple, hair: '#1a1c2c', skin: PALETTE.cream,
+  { name: 'MISAKI', role: 'Onboarding', shirt: PALETTE.purple, hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long',
     hp: 95, atk: 9, sp: 'HR REVIEW', spType: 'debuff', spPow: 5 },
-  { name: 'MARIO', role: 'Engineer', shirt: PALETTE.red, hair: PALETTE.gold, skin: PALETTE.cream,
+  { name: 'MARIO', role: 'Engineer', shirt: PALETTE.red, hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short',
     hp: 100, atk: 11, sp: 'CODE PUSH', spType: 'dmg', spPow: 22 },
-  { name: 'MATTHEW', role: 'Engineer', shirt: PALETTE.lblue, hair: PALETTE.gold, skin: PALETTE.cream,
+  { name: 'MATTHEW', role: 'Engineer', shirt: PALETTE.lblue, hair: HAIR_COLORS.blonde, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short',
     hp: 95, atk: 10, sp: 'MERGE CONFLICT', spType: 'dmg', spPow: 30 },
-  { name: 'RAJ', role: 'Engineer', shirt: PALETTE.green, hair: '#1a1c2c', skin: '#d4a574',
+  { name: 'RAJ', role: 'Engineer', shirt: PALETTE.green, hair: HAIR_COLORS.brown, skin: SKIN_TONES.brown, gender: 'm', hairStyle: 'short',
     hp: 100, atk: 10, sp: 'CRASH REPORT', spType: 'dmg', spPow: 24 },
-  { name: 'ATUL', role: 'Engineer', shirt: PALETTE.cream, hair: '#1a1c2c', skin: '#d4a574',
+  { name: 'ATUL', role: 'Engineer', shirt: PALETTE.cream, hair: HAIR_COLORS.brown, skin: SKIN_TONES.brown, gender: 'm', hairStyle: 'short',
     hp: 105, atk: 9, sp: 'SYS REBOOT', spType: 'heal', spPow: 35 },
-  { name: 'TETSUYA', role: 'Engineer', shirt: PALETTE.gray, hair: '#1a1c2c', skin: '#e8c8a0',
+  { name: 'TETSUYA', role: 'Engineer', shirt: PALETTE.gray, hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short',
     hp: 90, atk: 12, sp: 'FINAL BUILD', spType: 'dmg', spPow: 26 }
 ];
 
@@ -694,7 +780,7 @@ function drawFighterPortrait(f, x, y, sel) {
   const cx = Math.floor(x), cy = Math.floor(y);
   rect(cx, cy, 36, 40, sel ? PALETTE.gold : PALETTE.dgray);
   rect(cx + 1, cy + 1, 34, 38, PALETTE.void);
-  drawPerson(cx + 11, cy + 8, f.shirt, f.hair);
+  drawPerson(cx + 11, cy + 8, f);
   ctx.font = '6px "Press Start 2P", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
@@ -847,9 +933,9 @@ const FIGHT = {
     const f = this.fighter;
     const py = 120 - (this.pflash > 0 && this.pflash % 4 < 2 ? 2 : 0);
     if (this.pflash > 0 && this.pflash % 4 < 2) {
-      drawPerson(40 + sx, py, PALETTE.white, f.hair);
+      drawPerson(40 + sx, py, { shirt: f.shirt, hair: f.hair, skin: f.skin, gender: f.gender, hairStyle: f.hairStyle, flash: true });
     } else {
-      drawPerson(40 + sx, py, f.shirt, f.hair);
+      drawPerson(40 + sx, py, { shirt: f.shirt, hair: f.hair, skin: f.skin, gender: f.gender, hairStyle: f.hairStyle });
     }
     ctx.font = '6px "Press Start 2P", monospace';
     ctx.textAlign = 'center';
@@ -1045,7 +1131,7 @@ const LOOTBOX = {
       const isNew = owned && owned.count === 1;
       rect(cx - 30, cy - 24, 60, 60, PALETTE.gold);
       rect(cx - 26, cy - 20, 52, 52, PALETTE.purple);
-      drawPerson(cx - 7, cy - 4, pool.color, PALETTE.gold);
+      drawPerson(cx - 8, cy - 4, { shirt: pool.color, hair: charLooks(r.name).hair, skin: charLooks(r.name).skin, gender: charLooks(r.name).gender, hairStyle: charLooks(r.name).hairStyle });
       ctx.font = '8px "Press Start 2P", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
@@ -1131,7 +1217,8 @@ const COLLECTION = {
           rect(x, cellY, cellW, cellH, PALETTE.dgray);
           rect(x + 1, cellY + 1, cellW - 2, cellH - 2, PALETTE.void);
           if (owned) {
-            drawPerson(x + 11, cellY + 6, pool.color, PALETTE.gold);
+            const cl = charLooks(pool.members[m]);
+            drawPerson(x + 11, cellY + 6, { shirt: pool.color, hair: cl.hair, skin: cl.skin, gender: cl.gender, hairStyle: cl.hairStyle });
             if (owned.count > 1) {
               ctx.font = '5px "Press Start 2P", monospace';
               ctx.textAlign = 'right';
@@ -1148,7 +1235,7 @@ const COLLECTION = {
             ctx.textAlign = 'left';
           } else {
             ctx.globalAlpha = 0.5;
-            drawPerson(x + 11, cellY + 6, PALETTE.dgray, PALETTE.dgray);
+            drawPerson(x + 11, cellY + 6, { shirt: PALETTE.dgray, hair: PALETTE.dgray, skin: PALETTE.dgray, gender: 'm', hairStyle: 'short' });
             ctx.globalAlpha = 1;
             ctx.font = '5px "Press Start 2P", monospace';
             ctx.textAlign = 'center';
