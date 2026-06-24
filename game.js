@@ -115,27 +115,77 @@ function drawHUD() {
 
 const STARS = [[20,16],[60,28],[110,12],[170,24],[220,10],[270,20],[330,30],[300,40],[50,44],[140,38]];
 
-function drawFantasyMap() {
-  for (let ty = 0; ty < VH; ty += 8) {
+function drawDesk(x, y) {
+  rect(x, y, 40, 12, '#a0633a');
+  rect(x, y + 11, 40, 2, '#7d4a2a');
+  rect(x + 4, y + 13, 3, 6, '#5d3a1f');
+  rect(x + 33, y + 13, 3, 6, '#5d3a1f');
+  rect(x + 11, y - 9, 18, 11, PALETTE.void);
+  rect(x + 12, y - 8, 16, 9, PALETTE.blue);
+  rect(x + 13, y - 7, 6, 2, PALETTE.lblue);
+  rect(x + 21, y - 4, 4, 2, PALETTE.green);
+  rect(x + 16, y + 2, 8, 3, PALETTE.dgray);
+}
+
+function drawChair(x, y) {
+  rect(x, y, 10, 8, PALETTE.void);
+  rect(x + 1, y + 1, 8, 6, '#2a2d4a');
+  rect(x + 3, y + 8, 2, 3, PALETTE.dgray);
+  rect(x + 5, y + 8, 2, 3, PALETTE.dgray);
+}
+
+function drawPlant(x, y) {
+  rect(x + 2, y + 8, 8, 6, PALETTE.orange);
+  rect(x, y, 12, 9, PALETTE.dgreen);
+  rect(x + 2, y - 4, 8, 6, PALETTE.green);
+  rect(x + 4, y - 7, 4, 4, PALETTE.green);
+}
+
+function drawOfficeMap() {
+  const WALL = '#3a4470', FL1 = '#c4d3da', FL2 = '#aebfcc';
+  rect(0, 0, VW, 22, WALL);
+  rect(0, 22, VW, 2, '#7d4a2a');
+  for (let ty = 24; ty < VH; ty += 8) {
     for (let tx = 0; tx < VW; tx += 8) {
-      const c = (((tx + ty) / 8) | 0) % 2 === 0 ? PALETTE.dgreen : PALETTE.green;
+      const c = (((tx + ty) / 8) | 0) % 2 === 0 ? FL1 : FL2;
       rect(tx, ty, 8, 8, c);
     }
   }
-  // pond
-  rect(150, 70, 64, 30, PALETTE.blue);
-  rect(154, 74, 56, 22, PALETTE.lblue);
-  rect(156, 76, 12, 3, PALETTE.cream);
-  // main dirt path
-  rect(0, 102, VW, 6, PALETTE.gold);
-  rect(0, 108, VW, 2, PALETTE.orange);
-  // decorative bushes/trees
-  const trees = [[18,18],[300,18],[60,170],[312,156],[210,28],[100,160]];
-  trees.forEach(function (t) {
-    rect(t[0] + 3, t[1] + 6, 4, 4, PALETTE.purple);
-    rect(t[0], t[1], 10, 8, PALETTE.dgreen);
-    rect(t[0] + 1, t[1] - 2, 8, 4, PALETTE.green);
-  });
+  // neon ai& sign on wall
+  rect(150, 3, 84, 14, '#222a4a');
+  ctx.font = '11px "Press Start 2P", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = PALETTE.lblue;
+  ctx.fillText('ai&', 192, 10);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  rect(148, 2, 88, 1, PALETTE.lblue);
+  rect(148, 17, 88, 1, PALETTE.lblue);
+  // central desk cluster
+  drawDesk(108, 40);
+  drawDesk(168, 40);
+  drawDesk(228, 40);
+  drawChair(118, 56);
+  drawChair(178, 56);
+  drawChair(238, 56);
+  // whiteboard (bottom-left)
+  rect(20, 150, 46, 26, PALETTE.cream);
+  rect(18, 148, 50, 2, '#888');
+  rect(22, 154, 16, 2, PALETTE.red);
+  rect(22, 158, 24, 2, PALETTE.blue);
+  rect(22, 162, 10, 2, PALETTE.dgreen);
+  // coffee station (bottom-right)
+  rect(326, 150, 30, 18, '#5d3a1f');
+  rect(330, 152, 22, 10, PALETTE.dgray);
+  rect(334, 154, 6, 6, PALETTE.void);
+  rect(344, 156, 4, 4, PALETTE.cream);
+  rect(330, 162, 8, 5, PALETTE.cream);
+  // plants in corners
+  drawPlant(2, 26);
+  drawPlant(370, 26);
+  drawPlant(2, 188);
+  drawPlant(370, 188);
 }
 
 function drawZoneIcon(kind, cx, cy) {
@@ -190,9 +240,9 @@ function placeholderScreen(name, hint) {
 }
 
 const MAP_ZONES = [
-  { id: 'crossy', x: 14, y: 28, w: 80, h: 58, label: 'CROSSY', icon: 'road', color: PALETTE.green },
-  { id: 'rush', x: 286, y: 26, w: 80, h: 58, label: 'RUSH HR', icon: 'cars', color: PALETTE.orange },
-  { id: 'fight', x: 144, y: 134, w: 88, h: 58, label: 'FIGHTER', icon: 'sword', color: PALETTE.red }
+  { id: 'crossy', x: 14, y: 30, w: 78, h: 54, label: 'CROSSY', icon: 'road', color: PALETTE.green },
+  { id: 'rush', x: 292, y: 30, w: 78, h: 54, label: 'RUSH HR', icon: 'cars', color: PALETTE.orange },
+  { id: 'fight', x: 148, y: 98, w: 88, h: 48, label: 'FIGHTER', icon: 'sword', color: PALETTE.red }
 ];
 
 const SCREENS = {
@@ -210,7 +260,7 @@ const SCREENS = {
   },
   map: {
     draw: function () {
-      drawFantasyMap();
+      drawOfficeMap();
       MAP_ZONES.forEach(drawZone);
       uiButton('MENU', 6, 4, 50, 16, PALETTE.purple);
       textCenter('click a zone', VH - 13, 7, PALETTE.cream);
