@@ -743,9 +743,10 @@ const FIGHTERS = [
     hp: 90, atk: 12, sp: 'FINAL BUILD', spType: 'dmg', spPow: 26 }
 ];
 
-const ENEMIES = [
-  { name: 'SYNTAX ERROR', hp: 55, atk: 7, kind: 'glitch' },
-  { name: 'DEVIL BOSS', hp: 85, atk: 13, kind: 'devil' }
+const ENEMY_WAVES = [
+  [{ name: 'SYNTAX ERROR', hp: 45, atk: 6, kind: 'glitch' }],
+  [{ name: 'BUG REPORT', hp: 55, atk: 8, kind: 'glitch' }],
+  [{ name: 'DEVIL BOSS', hp: 100, atk: 14, kind: 'devil' }]
 ];
 
 function drawGlitchEnemy(x, y) {
@@ -807,14 +808,21 @@ const FIGHT = {
   enter: function () { this.sub = 'select'; this.selIdx = -1; this.startBattle(); },
   startBattle: function () {
     const f = FIGHTERS[this.selIdx >= 0 ? this.selIdx : 0];
-    const e = ENEMIES[Math.floor(Math.random() * ENEMIES.length)];
+    this.fighter = f;
     this.player = { name: f.name, hp: f.hp, maxhp: f.hp, atk: f.atk, buff: 0 };
-    this.enemy = { name: e.name, hp: e.hp, maxhp: e.hp, atk: e.atk, debuff: 0, kind: e.kind };
-    this.turn = 'player'; this.log = ['A ' + e.name + ' appears!']; this.logT = 0;
+    this.wave = 0; this.maxWave = ENEMY_WAVES.length;
     this.spCd = 0; this.state = 'play'; this.shake = 0;
-    this.pflash = 0; this.eflash = 0; this.fighter = f;
-    this.spAnim = null;
+    this.pflash = 0; this.eflash = 0;
+    this.spAnim = null; this.slashAnim = null;
     this.lungeT = 0; this.elungeT = 0;
+    this.spawnEnemy();
+  },
+  spawnEnemy: function () {
+    const e = ENEMY_WAVES[this.wave][0];
+    this.enemy = { name: e.name, hp: e.hp, maxhp: e.hp, atk: e.atk, debuff: 0, kind: e.kind };
+    this.turn = 'player';
+    this.log = ['Round ' + (this.wave + 1) + '/' + this.maxWave + ': ' + e.name + ' appears!'];
+    this.logT = 0;
   },
   selectFighter: function (i) {
     this.selIdx = i; this.startBattle(); this.sub = 'battle';
@@ -824,6 +832,7 @@ const FIGHT = {
     const dmg = this.player.atk + this.player.buff + Math.floor(Math.random() * 4);
     this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
     this.eflash = 10; this.shake = 6; this.lungeT = 12;
+    this.slashAnim = { t: 0, max: 16, fromPlayer: true };
     playSfx('hit');
     this.log = [this.player.name + ' attacks! ' + dmg + ' dmg'];
     this.logT = 0; this.endTurn();
@@ -858,7 +867,14 @@ const FIGHT = {
   },
   endTurn: function () {
     if (this.enemy.hp <= 0) {
-      this.state = 'win'; addCoins(50); playSfx('win'); return;
+      this.wave++;
+      if (this.wave >= this.maxWave) {
+        this.state = 'win'; addCoins(50); playSfx('win'); return;
+      }
+      this.log = [this.enemy.name + ' defeated! Next round...'];
+      this.logT = 0;
+      this.state = 'wave';
+      return;
     }
     if (this.player.hp <= 0) { this.state = 'lose'; playSfx('lose'); return; }
     this.turn = 'enemy'; this.logT = 0;
@@ -868,6 +884,7 @@ const FIGHT = {
     const dmg = Math.max(1, this.enemy.atk - this.enemy.debuff + Math.floor(Math.random() * 4) - 1);
     this.player.hp = Math.max(0, this.player.hp - dmg);
     this.pflash = 10; this.shake = 6; this.elungeT = 12;
+    this.slashAnim = { t: 0, max: 16, fromPlayer: false };
     this.log = [this.enemy.name + ' hits! ' + dmg + ' dmg'];
     this.logT = 0; this.spCd = Math.max(0, this.spCd - 1);
     if (this.player.hp <= 0) { this.state = 'lose'; playSfx('lose'); return; }
@@ -880,6 +897,7 @@ const FIGHT = {
     if (this.lungeT > 0) this.lungeT--;
     if (this.elungeT > 0) this.elungeT--;
     if (this.spAnim) { this.spAnim.t++; if (this.spAnim.t >= this.spAnim.max) this.spAnim = null; }
+    if (this.slashAnim) { this.slashAnim.t++; if (this.slashAnim.t >= this.slashAnim.max) this.slashAnim = null; }
     if (this.logT < 60) this.logT++;
     if (this.sub === 'select') {
       for (let i = 0; i < FIGHTERS.length; i++) {
@@ -887,6 +905,10 @@ const FIGHT = {
         const x = 14 + col * 74, y = 30 + row * 64;
         if (click && pointIn(click.x, click.y, x, y, 36, 40)) { this.selectFighter(i); return; }
       }
+      return;
+    }
+    if (this.state === 'wave') {
+      if (this.logT >= 45) { this.spawnEnemy(); this.state = 'play'; }
       return;
     }
     if (this.state === 'win' || this.state === 'lose') {
@@ -943,6 +965,42 @@ const FIGHT = {
       textCenter('click a character', VH - 16, 6, PALETTE.cream);
     }
     drawHUD();
+  },
+  drawSlashAnim: function (px, py, ex, ey) {
+    if (!this.slashAnim) return;
+    const a = this.slashAnim;
+    const t = a.t;
+    const p = t / a.max;
+    const fromP = a.fromPlayer;
+    const tx = fromP ? ex + 7 : px + 9;
+    const ty = fromP ? ey + 9 : py + 9;
+    const startX = fromP ? px + 20 : ex;
+    const curX = startX + (tx - startX) * p;
+    const arcY = ty - Math.sin(p * Math.PI) * 8;
+    const angle = fromP ? 0.5 : -0.5;
+    const len = 14;
+    const dx = Math.cos(angle) * len / 2;
+    const dy = Math.sin(angle) * len / 2;
+    const alpha = p < 0.7 ? 1 : 1 - (p - 0.7) / 0.3;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const cols = [PALETTE.gray, PALETTE.cream, PALETTE.white];
+    for (let i = 0; i < 3; i++) {
+      const off = (i - 1) * 2;
+      ctx.strokeStyle = cols[i];
+      ctx.lineWidth = 3 - i;
+      ctx.beginPath();
+      ctx.moveTo(curX - dx + off, arcY - dy + off);
+      ctx.lineTo(curX + dx + off, arcY + dy + off);
+      ctx.stroke();
+    }
+    for (let i = 0; i < 4; i++) {
+      const sp = (i / 4 + p * 0.5) % 1;
+      const sx = curX + (Math.random() - 0.5) * 6;
+      const sy = arcY + (Math.random() - 0.5) * 6;
+      rect(sx - 0.5, sy - 0.5, 1, 1, PALETTE.cream);
+    }
+    ctx.restore();
   },
   drawSpAnim: function (px, py, ex, ey) {
     if (!this.spAnim) return;
@@ -1042,6 +1100,12 @@ const FIGHT = {
     rect(0, 0, VW, VH, PALETTE.bg);
     rect(0, 0, VW, 20, PALETTE.dgray);
     textCenter('OFFICE BRAWL', 6, 8, PALETTE.gold);
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = PALETTE.cream;
+    ctx.fillText('Round ' + (this.wave + 1) + '/' + this.maxWave, VW / 2, 23);
+    ctx.textAlign = 'left';
     rect(0, 110, VW, 2, PALETTE.dgray);
     const f = this.fighter;
     const baseY = 90;
@@ -1082,6 +1146,7 @@ const FIGHT = {
     text('ENEMY', 280, 20, 6, PALETTE.cream);
     if (this.enemy.debuff > 0) text('ATK-' + this.enemy.debuff, 280, 42, 5, PALETTE.gray);
     this.drawSpAnim(px, py, ex, ey);
+    this.drawSlashAnim(px, py, ex, ey);
     if (this.state === 'play') {
       const canAct = (this.turn === 'player');
       const spReady = this.spCd === 0;
@@ -1112,7 +1177,7 @@ const FIGHT = {
       rect(70, 60, 244, 96, PALETTE.void);
       rect(72, 62, 240, 92, PALETTE.dgray);
       textCenter(this.state === 'win' ? '+50 COINS!' : 'DEFEATED', 78, 12, PALETTE.gold);
-      textCenter(this.state === 'win' ? this.enemy.name + ' down!' : 'you were fired', 98, 7, PALETTE.cream);
+      textCenter(this.state === 'win' ? 'all rounds cleared!' : 'you were fired', 98, 7, PALETTE.cream);
       uiButton('RETRY', 96, 120, 80, 22, PALETTE.dgreen);
       uiButton('MAP', 208, 120, 80, 22, PALETTE.purple);
     }
