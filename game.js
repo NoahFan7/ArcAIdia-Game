@@ -1232,6 +1232,9 @@ function init() {
   resize();
   setupInput();
   window.addEventListener('resize', resize);
+  window.state = state;
+  window.addCoins = addCoins;
+  window.saveState = saveState;
   requestAnimationFrame(loop);
 }
 
