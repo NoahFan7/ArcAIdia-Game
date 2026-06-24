@@ -563,6 +563,284 @@ const RUSH = {
   }
 };
 
+const FIGHTERS = [
+  { name: 'DAVID', role: 'CEO', shirt: PALETTE.blue, hair: PALETTE.gold, skin: PALETTE.cream,
+    hp: 110, atk: 10, sp: 'EXEC ORDER', spType: 'dmg', spPow: 28 },
+  { name: 'FEIFAN', role: 'Marketing', shirt: PALETTE.orange, hair: PALETTE.gold, skin: PALETTE.cream,
+    hp: 90, atk: 9, sp: 'VIRAL CAMP', spType: 'drain', spPow: 18 },
+  { name: 'NAO', role: 'Onboarding', shirt: PALETTE.dgreen, hair: '#3a2a1a', skin: PALETTE.cream,
+    hp: 100, atk: 8, sp: 'TEAM BUILD', spType: 'buff', spPow: 6 },
+  { name: 'MISAKI', role: 'Onboarding', shirt: PALETTE.purple, hair: '#1a1c2c', skin: PALETTE.cream,
+    hp: 95, atk: 9, sp: 'HR REVIEW', spType: 'debuff', spPow: 5 },
+  { name: 'MARIO', role: 'Engineer', shirt: PALETTE.red, hair: PALETTE.gold, skin: PALETTE.cream,
+    hp: 100, atk: 11, sp: 'CODE PUSH', spType: 'dmg', spPow: 22 },
+  { name: 'MATTHEW', role: 'Engineer', shirt: PALETTE.lblue, hair: PALETTE.gold, skin: PALETTE.cream,
+    hp: 95, atk: 10, sp: 'MERGE CONFLICT', spType: 'dmg', spPow: 30 },
+  { name: 'RAJ', role: 'Engineer', shirt: PALETTE.green, hair: '#1a1c2c', skin: '#d4a574',
+    hp: 100, atk: 10, sp: 'CRASH REPORT', spType: 'dmg', spPow: 24 },
+  { name: 'ATUL', role: 'Engineer', shirt: PALETTE.cream, hair: '#1a1c2c', skin: '#d4a574',
+    hp: 105, atk: 9, sp: 'SYS REBOOT', spType: 'heal', spPow: 35 },
+  { name: 'TETSUYA', role: 'Engineer', shirt: PALETTE.gray, hair: '#1a1c2c', skin: '#e8c8a0',
+    hp: 90, atk: 12, sp: 'FINAL BUILD', spType: 'dmg', spPow: 26 }
+];
+
+const ENEMIES = [
+  { name: 'SYNTAX ERROR', hp: 55, atk: 7, kind: 'glitch' },
+  { name: 'DEVIL BOSS', hp: 85, atk: 13, kind: 'devil' }
+];
+
+function drawGlitchEnemy(x, y) {
+  const cx = Math.floor(x), cy = Math.floor(y);
+  const cols = [PALETTE.red, PALETTE.purple, PALETTE.orange, PALETTE.lblue];
+  for (let i = 0; i < 6; i++) {
+    rect(cx + (i % 3) * 5, cy + Math.floor(i / 3) * 6, 4, 5, cols[(i + (cx | 0)) % cols.length]);
+  }
+  rect(cx + 2, cy + 1, 2, 1, PALETTE.void);
+  rect(cx + 8, cy + 1, 2, 1, PALETTE.void);
+  rect(cx + 3, cy + 4, 6, 1, PALETTE.void);
+}
+
+function drawDevilBoss(x, y) {
+  const cx = Math.floor(x), cy = Math.floor(y);
+  rect(cx + 2, cy + 12, 10, 5, PALETTE.red);
+  rect(cx + 3, cy + 11, 8, 1, PALETTE.red);
+  rect(cx + 4, cy + 6, 6, 6, PALETTE.red);
+  rect(cx + 3, cy + 3, 8, 4, PALETTE.red);
+  rect(cx + 2, cy + 1, 2, 3, PALETTE.void);
+  rect(cx + 3, cy + 0, 2, 2, PALETTE.void);
+  rect(cx + 9, cy + 1, 2, 3, PALETTE.void);
+  rect(cx + 8, cy + 0, 2, 2, PALETTE.void);
+  rect(cx + 4, cy + 4, 1, 1, PALETTE.gold);
+  rect(cx + 7, cy + 4, 1, 1, PALETTE.gold);
+  rect(cx + 5, cy + 7, 2, 1, PALETTE.void);
+  rect(cx + 1, cy + 17, 4, 3, '#3a2a1a');
+  rect(cx + 9, cy + 17, 4, 3, '#3a2a1a');
+}
+
+function drawFighterPortrait(f, x, y, sel) {
+  const cx = Math.floor(x), cy = Math.floor(y);
+  rect(cx, cy, 36, 40, sel ? PALETTE.gold : PALETTE.dgray);
+  rect(cx + 1, cy + 1, 34, 38, PALETTE.void);
+  drawPerson(cx + 11, cy + 8, f.shirt, f.hair);
+  ctx.font = '6px "Press Start 2P", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = sel ? PALETTE.gold : PALETTE.cream;
+  ctx.fillText(f.name, cx + 18, cy + 28);
+  ctx.textAlign = 'left';
+}
+
+const FIGHT = {
+  sub: 'select', selIdx: -1,
+  enter: function () { this.sub = 'select'; this.selIdx = -1; this.startBattle(); },
+  startBattle: function () {
+    const f = FIGHTERS[this.selIdx >= 0 ? this.selIdx : 0];
+    const e = ENEMIES[Math.floor(Math.random() * ENEMIES.length)];
+    this.player = { name: f.name, hp: f.hp, maxhp: f.hp, atk: f.atk, buff: 0 };
+    this.enemy = { name: e.name, hp: e.hp, maxhp: e.hp, atk: e.atk, debuff: 0, kind: e.kind };
+    this.turn = 'player'; this.log = ['A ' + e.name + ' appears!']; this.logT = 0;
+    this.spCd = 0; this.state = 'play'; this.shake = 0;
+    this.pflash = 0; this.eflash = 0; this.fighter = f;
+  },
+  selectFighter: function (i) {
+    this.selIdx = i; this.startBattle(); this.sub = 'battle';
+  },
+  doAttack: function () {
+    if (this.turn !== 'player' || this.state !== 'play') return;
+    const dmg = this.player.atk + this.player.buff + Math.floor(Math.random() * 4);
+    this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
+    this.eflash = 10; this.shake = 6;
+    this.log = [this.player.name + ' attacks! ' + dmg + ' dmg'];
+    this.logT = 0; this.endTurn();
+  },
+  doSpecial: function () {
+    if (this.turn !== 'player' || this.state !== 'play' || this.spCd > 0) return;
+    const f = this.fighter; let msg = '';
+    if (f.spType === 'dmg') {
+      const dmg = f.spPow + Math.floor(Math.random() * 5);
+      this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
+      this.eflash = 14; this.shake = 10;
+      msg = f.sp + '! ' + dmg + ' dmg!';
+    } else if (f.spType === 'drain') {
+      const dmg = f.spPow + Math.floor(Math.random() * 4);
+      this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
+      this.player.hp = Math.min(this.player.maxhp, this.player.hp + Math.floor(dmg / 2));
+      this.eflash = 12; this.pflash = 6;
+      msg = f.sp + '! ' + dmg + ' dmg, healed!';
+    } else if (f.spType === 'buff') {
+      this.player.buff += f.spPow; this.pflash = 10;
+      msg = f.sp + '! ATK +' + f.spPow;
+    } else if (f.spType === 'debuff') {
+      this.enemy.debuff += f.spPow; this.eflash = 10;
+      msg = f.sp + '! enemy ATK -' + f.spPow;
+    } else if (f.spType === 'heal') {
+      const h = f.spPow; this.player.hp = Math.min(this.player.maxhp, this.player.hp + h);
+      this.pflash = 12;
+      msg = f.sp + '! healed ' + h;
+    }
+    this.spCd = 3; this.log = [msg]; this.logT = 0; this.endTurn();
+  },
+  endTurn: function () {
+    if (this.enemy.hp <= 0) {
+      this.state = 'win'; addCoins(50); return;
+    }
+    if (this.player.hp <= 0) { this.state = 'lose'; return; }
+    this.turn = 'enemy'; this.logT = 0;
+  },
+  enemyTurn: function () {
+    if (this.turn !== 'enemy' || this.state !== 'play') return;
+    const dmg = Math.max(1, this.enemy.atk - this.enemy.debuff + Math.floor(Math.random() * 4) - 1);
+    this.player.hp = Math.max(0, this.player.hp - dmg);
+    this.pflash = 10; this.shake = 6;
+    this.log = [this.enemy.name + ' hits! ' + dmg + ' dmg'];
+    this.logT = 0; this.spCd = Math.max(0, this.spCd - 1);
+    if (this.player.hp <= 0) { this.state = 'lose'; return; }
+    this.turn = 'player';
+  },
+  update: function () {
+    if (this.shake > 0) this.shake--;
+    if (this.pflash > 0) this.pflash--;
+    if (this.eflash > 0) this.eflash--;
+    if (this.logT < 60) this.logT++;
+    if (this.sub === 'select') {
+      for (let i = 0; i < FIGHTERS.length; i++) {
+        const col = i % 5, row = Math.floor(i / 5);
+        const x = 14 + col * 74, y = 30 + row * 64;
+        if (click && pointIn(click.x, click.y, x, y, 36, 40)) { this.selectFighter(i); return; }
+      }
+      return;
+    }
+    if (this.state === 'win' || this.state === 'lose') {
+      if (click && pointIn(click.x, click.y, 96, 120, 80, 22)) { this.sub = 'select'; this.selIdx = -1; return; }
+      if (click && pointIn(click.x, click.y, 208, 120, 80, 22)) setScreen('map');
+      return;
+    }
+    if (this.turn === 'enemy' && this.logT >= 30) { this.enemyTurn(); return; }
+    if (this.turn !== 'player') return;
+    if (click && pointIn(click.x, click.y, 30, 150, 100, 22)) this.doAttack();
+    if (click && pointIn(click.x, click.y, 142, 150, 100, 22)) this.doSpecial();
+    if (click && pointIn(click.x, click.y, 254, 150, 100, 22)) setScreen('map');
+  },
+  drawHpBar: function (x, y, w, hp, maxhp, color) {
+    rect(x, y, w, 8, PALETTE.void);
+    rect(x + 1, y + 1, w - 2, 6, PALETTE.dgray);
+    const pct = Math.max(0, hp / maxhp);
+    rect(x + 1, y + 1, Math.floor((w - 2) * pct), 6, color);
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = PALETTE.cream;
+    ctx.fillText(hp + '/' + maxhp, x + w / 2, y + 9);
+    ctx.textAlign = 'left';
+  },
+  draw: function () {
+    if (this.sub === 'select') { this.drawSelect(); return; }
+    this.drawBattle();
+  },
+  drawSelect: function () {
+    rect(0, 0, VW, VH, PALETTE.bg);
+    rect(0, 0, VW, 20, PALETTE.dgray);
+    textCenter('CHOOSE FIGHTER', 6, 8, PALETTE.gold);
+    for (let i = 0; i < FIGHTERS.length; i++) {
+      const f = FIGHTERS[i];
+      const col = i % 5, row = Math.floor(i / 5);
+      const x = 14 + col * 74, y = 30 + row * 64;
+      const sel = (this.selIdx === i);
+      const hover = pointIn(mouse.x, mouse.y, x, y, 36, 40);
+      drawFighterPortrait(f, x, y, sel || hover);
+      if (hover || sel) {
+        ctx.font = '5px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.lblue;
+        ctx.fillText(f.role, x + 18, y + 36);
+        ctx.textAlign = 'left';
+      }
+    }
+    if (this.selIdx >= 0) {
+      const f = FIGHTERS[this.selIdx];
+      textCenter(f.name + ' - ' + f.sp, VH - 16, 6, PALETTE.gold);
+    } else {
+      textCenter('click a character', VH - 16, 6, PALETTE.cream);
+    }
+    drawHUD();
+  },
+  drawBattle: function () {
+    const sx = this.shake > 0 ? (Math.random() - 0.5) * this.shake : 0;
+    rect(0, 0, VW, VH, PALETTE.bg);
+    rect(0, 0, VW, 20, PALETTE.dgray);
+    textCenter('OFFICE BRAWL', 6, 8, PALETTE.gold);
+    const f = this.fighter;
+    const py = 120 - (this.pflash > 0 && this.pflash % 4 < 2 ? 2 : 0);
+    if (this.pflash > 0 && this.pflash % 4 < 2) {
+      drawPerson(40 + sx, py, PALETTE.white, f.hair);
+    } else {
+      drawPerson(40 + sx, py, f.shirt, f.hair);
+    }
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = PALETTE.gold;
+    ctx.fillText(f.name, 49 + sx, py - 8);
+    ctx.textAlign = 'left';
+    this.drawHpBar(20, 80, 80, this.player.hp, this.player.maxhp, PALETTE.green);
+    text('YOU', 20, 70, 6, PALETTE.cream);
+    if (this.player.buff > 0) text('ATK+' + this.player.buff, 20, 92, 5, PALETTE.gold);
+    const ex = 320 + sx * -1;
+    const ey = 30 - (this.eflash > 0 && this.eflash % 4 < 2 ? 2 : 0);
+    if (this.eflash > 0 && this.eflash % 4 < 2) {
+      if (this.enemy.kind === 'glitch') drawGlitchEnemy(ex, ey);
+      else drawDevilBoss(ex, ey);
+    } else {
+      if (this.enemy.kind === 'glitch') drawGlitchEnemy(ex, ey);
+      else drawDevilBoss(ex, ey);
+    }
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = PALETTE.red;
+    ctx.fillText(this.enemy.name, ex + 7, ey - 8);
+    ctx.textAlign = 'left';
+    this.drawHpBar(280, 80, 80, this.enemy.hp, this.enemy.maxhp, PALETTE.red);
+    text('ENEMY', 280, 70, 6, PALETTE.cream);
+    if (this.enemy.debuff > 0) text('ATK-' + this.enemy.debuff, 280, 92, 5, PALETTE.gray);
+    if (this.state === 'play') {
+      const canAct = (this.turn === 'player');
+      const spReady = this.spCd === 0;
+      const ax = 30, sx2 = 142, fx = 254;
+      const ah = canAct ? PALETTE.red : PALETTE.dgray;
+      const sh = canAct && spReady ? f.shirt : PALETTE.dgray;
+      uiButton('ATTACK', ax, 150, 100, 22, ah);
+      uiButton(f.sp, sx2, 150, 100, 22, sh);
+      uiButton('FLEE', fx, 150, 100, 22, PALETTE.purple);
+      if (!spReady && this.spCd > 0) {
+        ctx.font = '5px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = PALETTE.cream;
+        ctx.fillText('CD:' + this.spCd, sx2 + 50, 144);
+        ctx.textAlign = 'left';
+      }
+    }
+    if (this.log.length > 0) {
+      ctx.font = '7px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = PALETTE.cream;
+      ctx.fillText(this.log[0], VW / 2, 112);
+      ctx.textAlign = 'left';
+    }
+    drawHUD();
+    if (this.state === 'win' || this.state === 'lose') {
+      rect(70, 60, 244, 96, PALETTE.void);
+      rect(72, 62, 240, 92, PALETTE.dgray);
+      textCenter(this.state === 'win' ? '+50 COINS!' : 'DEFEATED', 78, 12, PALETTE.gold);
+      textCenter(this.state === 'win' ? this.enemy.name + ' down!' : 'you were fired', 98, 7, PALETTE.cream);
+      uiButton('RETRY', 96, 120, 80, 22, PALETTE.dgreen);
+      uiButton('MAP', 208, 120, 80, 22, PALETTE.purple);
+    }
+  }
+};
+
 const SCREENS = {
   intro: {
     draw: function () {
@@ -595,7 +873,7 @@ const SCREENS = {
   },
   crossy: CROSSY,
   rush: RUSH,
-  fight: placeholderScreen('TURN FIGHTER', 'defeat enemy   [ESC] map'),
+  fight: FIGHT,
   shop: {
     draw: function () {
       rect(0, 0, VW, VH, PALETTE.bg);
