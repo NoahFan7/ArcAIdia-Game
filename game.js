@@ -17,7 +17,7 @@ const PALETTE = {
   white:  '#f4f4f4'
 };
 
-const SCREEN_ORDER = ['intro', 'map', 'crossy', 'rush', 'fight', 'shop', 'collection'];
+const SCREEN_ORDER = ['intro', 'map', 'crossy', 'mines', 'fight', 'shop', 'collection'];
 
 let canvas, ctx;
 let state = { coins: 0, plushies: {}, screen: 'intro' };
@@ -207,6 +207,16 @@ function drawZoneIcon(kind, cx, cy) {
     rect(cx + 5, cy - 7, 3, 14, PALETTE.cream);
     rect(cx - 9, cy + 6, 5, 3, PALETTE.gold);
     rect(cx + 4, cy + 6, 5, 3, PALETTE.gold);
+  } else if (kind === 'hazard') {
+    rect(cx - 12, cy - 2, 24, 8, PALETTE.gold);
+    rect(cx - 11, cy - 1, 22, 6, PALETTE.void);
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = PALETTE.gold;
+    ctx.fillText('!', cx, cy + 2);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
   }
 }
 
@@ -241,7 +251,7 @@ function placeholderScreen(name, hint) {
 
 const MAP_ZONES = [
   { id: 'crossy', x: 14, y: 30, w: 78, h: 54, label: 'CROSSY', icon: 'road', color: PALETTE.green },
-  { id: 'rush', x: 292, y: 30, w: 78, h: 54, label: 'RUSH HR', icon: 'cars', color: PALETTE.orange },
+  { id: 'mines', x: 292, y: 30, w: 78, h: 54, label: 'MINES', icon: 'hazard', color: PALETTE.orange },
   { id: 'fight', x: 148, y: 98, w: 88, h: 48, label: 'FIGHTER', icon: 'sword', color: PALETTE.red }
 ];
 
@@ -419,224 +429,194 @@ const CROSSY = {
   }
 };
 
-const RUSH_PUZZLES = [
-  // Puzzle 1: 30 moves, 10 pieces
-  [
-    { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
-    { id: 'A', orient: 'v', len: 2, col: 6, row: 1, c: PALETTE.orange },
-    { id: 'B', orient: 'h', len: 3, col: 5, row: 4, c: PALETTE.dgreen },
-    { id: 'C', orient: 'h', len: 3, col: 0, row: 6, c: PALETTE.cream },
-    { id: 'D', orient: 'v', len: 3, col: 0, row: 0, c: PALETTE.gold },
-    { id: 'E', orient: 'h', len: 2, col: 2, row: 5, c: PALETTE.purple },
-    { id: 'F', orient: 'v', len: 3, col: 2, row: 1, c: PALETTE.lblue },
-    { id: 'G', orient: 'h', len: 2, col: 4, row: 2, c: PALETTE.blue },
-    { id: 'H', orient: 'v', len: 2, col: 4, row: 0, c: PALETTE.gray },
-    { id: 'I', orient: 'v', len: 2, col: 3, row: 2, c: PALETTE.red }
-  ],
-  // Puzzle 2: 30 moves, 8 pieces
-  [
-    { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
-    { id: 'A', orient: 'v', len: 3, col: 5, row: 5, c: PALETTE.blue },
-    { id: 'B', orient: 'h', len: 3, col: 3, row: 4, c: PALETTE.gray },
-    { id: 'C', orient: 'v', len: 3, col: 2, row: 2, c: PALETTE.red },
-    { id: 'D', orient: 'v', len: 3, col: 0, row: 5, c: PALETTE.orange },
-    { id: 'E', orient: 'v', len: 2, col: 1, row: 0, c: PALETTE.dgreen },
-    { id: 'F', orient: 'h', len: 3, col: 6, row: 4, c: PALETTE.cream },
-    { id: 'G', orient: 'h', len: 2, col: 2, row: 0, c: PALETTE.gold }
-  ],
-  // Puzzle 3: 30 moves, 9 pieces
-  [
-    { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
-    { id: 'A', orient: 'v', len: 2, col: 0, row: 6, c: PALETTE.gold },
-    { id: 'B', orient: 'v', len: 2, col: 6, row: 2, c: PALETTE.purple },
-    { id: 'C', orient: 'v', len: 3, col: 3, row: 1, c: PALETTE.lblue },
-    { id: 'D', orient: 'h', len: 3, col: 5, row: 1, c: PALETTE.blue },
-    { id: 'E', orient: 'v', len: 3, col: 1, row: 1, c: PALETTE.gray },
-    { id: 'F', orient: 'h', len: 2, col: 0, row: 4, c: PALETTE.red },
-    { id: 'G', orient: 'h', len: 3, col: 5, row: 0, c: PALETTE.orange },
-    { id: 'H', orient: 'h', len: 2, col: 4, row: 6, c: PALETTE.dgreen }
-  ],
-  // Puzzle 4: 30 moves, 10 pieces
-  [
-    { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
-    { id: 'A', orient: 'v', len: 3, col: 4, row: 0, c: PALETTE.orange },
-    { id: 'B', orient: 'h', len: 2, col: 5, row: 6, c: PALETTE.dgreen },
-    { id: 'C', orient: 'h', len: 2, col: 5, row: 4, c: PALETTE.cream },
-    { id: 'D', orient: 'v', len: 2, col: 2, row: 0, c: PALETTE.gold },
-    { id: 'E', orient: 'h', len: 3, col: 6, row: 0, c: PALETTE.purple },
-    { id: 'F', orient: 'v', len: 2, col: 1, row: 2, c: PALETTE.lblue },
-    { id: 'G', orient: 'v', len: 2, col: 2, row: 3, c: PALETTE.blue },
-    { id: 'H', orient: 'v', len: 3, col: 0, row: 6, c: PALETTE.gray },
-    { id: 'I', orient: 'v', len: 2, col: 0, row: 1, c: PALETTE.red }
-  ],
-  // Puzzle 5: 24 moves, 8 pieces
-  [
-    { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
-    { id: 'A', orient: 'h', len: 3, col: 5, row: 2, c: PALETTE.blue },
-    { id: 'B', orient: 'v', len: 2, col: 1, row: 5, c: PALETTE.gray },
-    { id: 'C', orient: 'v', len: 3, col: 4, row: 1, c: PALETTE.red },
-    { id: 'D', orient: 'v', len: 3, col: 0, row: 6, c: PALETTE.orange },
-    { id: 'E', orient: 'h', len: 2, col: 5, row: 6, c: PALETTE.dgreen },
-    { id: 'F', orient: 'v', len: 2, col: 3, row: 5, c: PALETTE.cream },
-    { id: 'G', orient: 'v', len: 3, col: 2, row: 6, c: PALETTE.gold }
-  ]
-];
-
-const RUSH = {
-  CELL: 20, GRID: 7,
-  OX: 122, OY: 30,
-  exitRow: 3,
+const MINES = {
+  COLS: 12, ROWS: 9, CELL: 18,
+  NUM_HAZARDS: 12,
+  OX: 4, OY: 22,
+  get W() { return this.COLS * this.CELL; },
+  get H() { return this.ROWS * this.CELL; },
   enter: function () { this.reset(); },
   reset: function () {
     this.state = 'play';
-    this.sel = -1;
-    this.drag = null;
-    this.puzzleIdx = Math.floor(Math.random() * RUSH_PUZZLES.length);
-    this.pieces = RUSH_PUZZLES[this.puzzleIdx].map(function (p) {
-      return { id: p.id, orient: p.orient, len: p.len, col: p.col, row: p.row, target: p.target, c: p.c };
-    });
-    this.winT = 0;
-  },
-  cellsOf: function (p, col, row) {
-    col = (col === undefined ? p.col : col);
-    row = (row === undefined ? p.row : row);
-    const out = [];
-    for (let i = 0; i < p.len; i++) {
-      if (p.orient === 'h') out.push([col + i, row]);
-      else out.push([col, row + i]);
+    this.grid = [];
+    for (let r = 0; r < this.ROWS; r++) {
+      this.grid.push([]);
+      for (let c = 0; c < this.COLS; c++) {
+        this.grid[r].push({ hazard: false, revealed: false, flagged: false, adj: 0 });
+      }
     }
-    return out;
+    this.firstClick = true;
+    this.flags = 0;
+    this.revealedCount = 0;
+    this.startTime = 0;
+    this.flashT = 0;
   },
-  canPlace: function (p, col, row) {
-    const cells = this.cellsOf(p, col, row);
-    for (let i = 0; i < cells.length; i++) {
-      const c = cells[i][0], r = cells[i][1];
-      if (c < 0 || c >= this.GRID || r < 0 || r >= this.GRID) return false;
+  placeHazards: function (safeR, safeC) {
+    const spots = [];
+    for (let r = 0; r < this.ROWS; r++) {
+      for (let c = 0; c < this.COLS; c++) {
+        if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
+        spots.push([r, c]);
+      }
     }
-    for (let i = 0; i < this.pieces.length; i++) {
-      const q = this.pieces[i];
-      if (q === p) continue;
-      const oc = this.cellsOf(q);
-      for (let j = 0; j < oc.length; j++) {
-        for (let k = 0; k < cells.length; k++) {
-          if (oc[j][0] === cells[k][0] && oc[j][1] === cells[k][1]) return false;
+    for (let i = spots.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = spots[i]; spots[i] = spots[j]; spots[j] = tmp;
+    }
+    for (let i = 0; i < Math.min(this.NUM_HAZARDS, spots.length); i++) {
+      const [r, c] = spots[i];
+      this.grid[r][c].hazard = true;
+    }
+    for (let r = 0; r < this.ROWS; r++) {
+      for (let c = 0; c < this.COLS; c++) {
+        if (this.grid[r][c].hazard) continue;
+        let n = 0;
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const nr = r + dr, nc = c + dc;
+            if (nr >= 0 && nr < this.ROWS && nc >= 0 && nc < this.COLS && this.grid[nr][nc].hazard) n++;
+          }
+        }
+        this.grid[r][c].adj = n;
+      }
+    }
+  },
+  floodReveal: function (r, c) {
+    const stack = [[r, c]];
+    while (stack.length > 0) {
+      const [cr, cc] = stack.pop();
+      if (cr < 0 || cr >= this.ROWS || cc < 0 || cc >= this.COLS) continue;
+      const cell = this.grid[cr][cc];
+      if (cell.revealed || cell.flagged || cell.hazard) continue;
+      cell.revealed = true;
+      this.revealedCount++;
+      if (cell.adj === 0) {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            stack.push([cr + dr, cc + dc]);
+          }
         }
       }
     }
-    return true;
   },
-  pieceAt: function (px, py) {
-    for (let i = 0; i < this.pieces.length; i++) {
-      const p = this.pieces[i];
-      const cells = this.cellsOf(p);
-      for (let j = 0; j < cells.length; j++) {
-        const x = this.OX + cells[j][0] * this.CELL;
-        const y = this.OY + cells[j][1] * this.CELL;
-        if (px >= x && px < x + this.CELL && py >= y && py < y + this.CELL) return i;
-      }
-    }
-    return -1;
+  cellAt: function (px, py) {
+    const c = Math.floor((px - this.OX) / this.CELL);
+    const r = Math.floor((py - this.OY) / this.CELL);
+    if (c < 0 || c >= this.COLS || r < 0 || r >= this.ROWS) return null;
+    return { r: r, c: c };
   },
   update: function () {
-    if (this.state === 'win') {
-      this.winT++;
+    if (this.flashT > 0) this.flashT--;
+    if (this.state === 'win' || this.state === 'dead') {
       if (click && pointIn(click.x, click.y, 96, 120, 80, 22)) this.reset();
       if (click && pointIn(click.x, click.y, 208, 120, 80, 22)) setScreen('map');
       return;
     }
-    if (click) {
-      const idx = this.pieceAt(click.x, click.y);
-      if (idx >= 0) {
-        this.sel = idx;
-        this.drag = { startCol: this.pieces[idx].col, startRow: this.pieces[idx].row, startMx: click.x, startMy: click.y };
-      } else {
-        this.sel = -1;
+    if (!click) return;
+    const hit = this.cellAt(click.x, click.y);
+    if (!hit) return;
+    const cell = this.grid[hit.r][hit.c];
+    const isRightClick = click.button === 2;
+    if (isRightClick || (keys['Shift'] && !cell.revealed)) {
+      if (!cell.revealed) {
+        cell.flagged = !cell.flagged;
+        this.flags += cell.flagged ? 1 : -1;
       }
-    }
-    if (this.sel >= 0 && mouse.down) {
-      const p = this.pieces[this.sel];
-      const dpx = mouse.x - (this.drag ? this.drag.startMx : mouse.x);
-      const dpy = mouse.y - (this.drag ? this.drag.startMy : mouse.y);
-      if (p.orient === 'h') {
-        const want = (this.drag ? this.drag.startCol : p.col) + Math.round(dpx / this.CELL);
-        if (want !== p.col && this.canPlace(p, want, p.row)) p.col = want;
-      } else {
-        const want = (this.drag ? this.drag.startRow : p.row) + Math.round(dpy / this.CELL);
-        if (want !== p.row && this.canPlace(p, p.col, want)) p.row = want;
-      }
-    } else if (this.sel >= 0 && !mouse.down) {
-      this.drag = null;
-    }
-    if (this.sel >= 0 && !mouse.down) {
-      const p = this.pieces[this.sel];
-      let dc = 0, dr = 0;
-      if (justPressed['ArrowLeft'] || justPressed['a'] || justPressed['A']) dc = -1;
-      if (justPressed['ArrowRight'] || justPressed['d'] || justPressed['D']) dc = 1;
-      if (justPressed['ArrowUp'] || justPressed['w'] || justPressed['W']) dr = -1;
-      if (justPressed['ArrowDown'] || justPressed['s'] || justPressed['S']) dr = 1;
-      if (p.orient === 'h') dr = 0; else dc = 0;
-      if (dc !== 0 || dr !== 0) {
-        if (this.canPlace(p, p.col + dc, p.row + dr)) { p.col += dc; p.row += dr; }
-      }
-    }
-    const t = this.pieces[0];
-    if (t.col + t.len - 1 >= this.GRID - 1 && this.state === 'play') {
-      this.state = 'win'; addCoins(30); this.winT = 0;
-    }
-  },
-  drawDeskPiece: function (p) {
-    const x = this.OX + p.col * this.CELL;
-    const y = this.OY + p.row * this.CELL;
-    const w = (p.orient === 'h' ? p.len : 1) * this.CELL;
-    const h = (p.orient === 'v' ? p.len : 1) * this.CELL;
-    if (p.target) {
-      drawPerson(x + 3, y + 1, p.c, PALETTE.gold);
       return;
     }
-    const pad = 2;
-    rect(x + pad, y + pad, w - pad * 2, h - pad * 2, p.c);
-    rect(x + pad, y + pad, w - pad * 2, 3, PALETTE.dgray);
-    rect(x + pad, y + h - pad - 3, w - pad * 2, 3, PALETTE.dgray);
-    rect(x + pad + 4, y + pad + 5, Math.min(10, w - 14), 7, PALETTE.void);
-    rect(x + pad + 5, y + pad + 6, Math.min(8, w - 16), 5, PALETTE.lblue);
+    if (cell.flagged || cell.revealed) return;
+    if (this.firstClick) {
+      this.firstClick = false;
+      this.placeHazards(hit.r, hit.c);
+      this.startTime = Date.now();
+    }
+    if (cell.hazard) {
+      this.state = 'dead';
+      this.flashT = 20;
+      for (let r = 0; r < this.ROWS; r++) {
+        for (let c = 0; c < this.COLS; c++) {
+          if (this.grid[r][c].hazard) this.grid[r][c].revealed = true;
+        }
+      }
+      return;
+    }
+    this.floodReveal(hit.r, hit.c);
+    if (this.revealedCount >= this.COLS * this.ROWS - this.NUM_HAZARDS) {
+      this.state = 'win';
+      addCoins(30);
+    }
+  },
+  numColor: function (n) {
+    const colors = [PALETTE.void, PALETTE.blue, PALETTE.dgreen, PALETTE.red, PALETTE.purple, PALETTE.orange, PALETTE.lblue, PALETTE.gray, PALETTE.cream];
+    return colors[n] || PALETTE.cream;
   },
   draw: function () {
     rect(0, 0, VW, VH, PALETTE.bg);
     rect(0, 0, VW, 20, PALETTE.dgray);
-    textCenter('DESK RUSH', 6, 8, PALETTE.gold);
-    const gw = this.GRID * this.CELL;
-    rect(this.OX - 4, this.OY - 4, gw + 8, gw + 8, PALETTE.void);
-    rect(this.OX - 2, this.OY - 2, gw + 4, gw + 4, '#7d4a2a');
-    for (let r = 0; r < this.GRID; r++) {
-      for (let c = 0; c < this.GRID; c++) {
+    textCenter('OFFICE MINESWEEPER', 6, 8, PALETTE.gold);
+    const remaining = this.NUM_HAZARDS - this.flags;
+    text('hazards:' + remaining, 6, VH - 11, 6, PALETTE.orange);
+    if (this.startTime > 0 && this.state === 'play') {
+      const t = Math.floor((Date.now() - this.startTime) / 1000);
+      text('time:' + t + 's', VW - 70, VH - 11, 6, PALETTE.cream);
+    }
+    drawHUD();
+    for (let r = 0; r < this.ROWS; r++) {
+      for (let c = 0; c < this.COLS; c++) {
         const x = this.OX + c * this.CELL;
         const y = this.OY + r * this.CELL;
-        rect(x, y, this.CELL, this.CELL, (c + r) % 2 === 0 ? '#c4d3da' : '#aebfcc');
+        const cell = this.grid[r][c];
+        if (cell.revealed) {
+          const isHaz = cell.hazard;
+          rect(x, y, this.CELL, this.CELL, isHaz ? PALETTE.red : PALETTE.dgray);
+          rect(x + 1, y + 1, this.CELL - 2, this.CELL - 2, isHaz ? '#7a2a35' : '#4a5570');
+          if (isHaz) {
+            rect(x + 5, y + 4, 8, 8, PALETTE.void);
+            rect(x + 6, y + 5, 6, 6, PALETTE.red);
+            ctx.font = '8px "Press Start 2P", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = PALETTE.cream;
+            ctx.fillText('!', x + this.CELL / 2, y + this.CELL / 2 + 1);
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+          } else if (cell.adj > 0) {
+            ctx.font = '8px "Press Start 2P", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = this.numColor(cell.adj);
+            ctx.fillText(String(cell.adj), x + this.CELL / 2, y + this.CELL / 2 + 1);
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+          }
+        } else {
+          rect(x, y, this.CELL, this.CELL, '#5a6a80');
+          rect(x + 1, y + 1, this.CELL - 2, this.CELL - 2, '#6b7c94');
+          rect(x + 1, y + this.CELL - 3, this.CELL - 2, 2, '#3a4458');
+          rect(x + this.CELL - 3, y + 1, 2, this.CELL - 2, '#3a4458');
+          if (cell.flagged) {
+            rect(x + 3, y + 4, 10, 6, PALETTE.gold);
+            rect(x + 3, y + 4, 3, 6, PALETTE.red);
+            rect(x + 4, y + 10, 4, 4, PALETTE.void);
+          }
+        }
       }
     }
-    const ex = this.OX + gw;
-    const ey = this.OY + this.exitRow * this.CELL;
-    rect(ex, ey, 8, this.CELL, PALETTE.dgreen);
-    rect(ex + 2, ey + 4, 4, 2, PALETTE.cream);
-    rect(ex + 2, ey + 12, 4, 2, PALETTE.cream);
-    if (this.sel >= 0) {
-      const p = this.pieces[this.sel];
-      const x = this.OX + p.col * this.CELL;
-      const y = this.OY + p.row * this.CELL;
-      const w = (p.orient === 'h' ? p.len : 1) * this.CELL;
-      const h = (p.orient === 'v' ? p.len : 1) * this.CELL;
+    const hover = this.cellAt(mouse.x, mouse.y);
+    if (hover && this.state === 'play') {
+      const x = this.OX + hover.c * this.CELL;
+      const y = this.OY + hover.r * this.CELL;
       ctx.strokeStyle = PALETTE.cream;
       ctx.lineWidth = 1;
-      ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+      ctx.strokeRect(x + 0.5, y + 0.5, this.CELL - 1, this.CELL - 1);
     }
-    this.pieces.forEach(this.drawDeskPiece, this);
-    text('puzzle ' + (this.puzzleIdx + 1) + '/5  |  drag desks / arrows', 6, VH - 11, 5, PALETTE.cream);
-    drawHUD();
-    if (this.state === 'win') {
+    if (this.state === 'win' || this.state === 'dead') {
       rect(70, 60, 244, 96, PALETTE.void);
       rect(72, 62, 240, 92, PALETTE.dgray);
-      textCenter('+30 COINS!', 78, 12, PALETTE.gold);
-      textCenter('you escaped!', 98, 7, PALETTE.cream);
+      textCenter(this.state === 'win' ? '+30 COINS!' : 'BOOM!', 78, 12, PALETTE.gold);
+      textCenter(this.state === 'win' ? 'office cleared!' : 'you hit a hazard', 98, 7, PALETTE.cream);
       uiButton('RETRY', 96, 120, 80, 22, PALETTE.dgreen);
       uiButton('MAP', 208, 120, 80, 22, PALETTE.purple);
     }
@@ -1235,7 +1215,7 @@ const SCREENS = {
     }
   },
   crossy: CROSSY,
-  rush: RUSH,
+  mines: MINES,
   fight: FIGHT,
   shop: SHOP,
   lootbox: LOOTBOX,
@@ -1274,8 +1254,9 @@ function setupInput() {
     const r = canvas.getBoundingClientRect();
     const scale = r.width / VW;
     mouse.down = true;
-    click = { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
+    click = { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale, button: e.button };
   });
+  canvas.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   window.addEventListener('mouseup', function () { mouse.down = false; });
   canvas.addEventListener('wheel', function (e) {
     e.preventDefault();
