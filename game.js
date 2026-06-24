@@ -420,52 +420,65 @@ const CROSSY = {
 };
 
 const RUSH_PUZZLES = [
+  // Puzzle 1: 30 moves, 10 pieces
   [
     { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
-    { id: 'A', orient: 'v', len: 2, col: 2, row: 2, c: PALETTE.red },
-    { id: 'B', orient: 'v', len: 2, col: 4, row: 2, c: PALETTE.orange },
-    { id: 'C', orient: 'h', len: 2, col: 5, row: 0, c: PALETTE.purple },
-    { id: 'D', orient: 'h', len: 3, col: 1, row: 6, c: PALETTE.dgreen },
-    { id: 'E', orient: 'v', len: 3, col: 6, row: 1, c: PALETTE.lblue }
+    { id: 'A', orient: 'v', len: 2, col: 6, row: 1, c: PALETTE.orange },
+    { id: 'B', orient: 'h', len: 3, col: 5, row: 4, c: PALETTE.dgreen },
+    { id: 'C', orient: 'h', len: 3, col: 0, row: 6, c: PALETTE.cream },
+    { id: 'D', orient: 'v', len: 3, col: 0, row: 0, c: PALETTE.gold },
+    { id: 'E', orient: 'h', len: 2, col: 2, row: 5, c: PALETTE.purple },
+    { id: 'F', orient: 'v', len: 3, col: 2, row: 1, c: PALETTE.lblue },
+    { id: 'G', orient: 'h', len: 2, col: 4, row: 2, c: PALETTE.blue },
+    { id: 'H', orient: 'v', len: 2, col: 4, row: 0, c: PALETTE.gray },
+    { id: 'I', orient: 'v', len: 2, col: 3, row: 2, c: PALETTE.red }
   ],
-  [
-    { id: 'P', orient: 'h', len: 1, col: 1, row: 3, target: true, c: PALETTE.gold },
-    { id: 'A', orient: 'v', len: 3, col: 3, row: 1, c: PALETTE.red },
-    { id: 'B', orient: 'h', len: 2, col: 4, row: 5, c: PALETTE.purple },
-    { id: 'C', orient: 'v', len: 2, col: 5, row: 2, c: PALETTE.orange },
-    { id: 'D', orient: 'h', len: 3, col: 0, row: 0, c: PALETTE.lblue },
-    { id: 'E', orient: 'v', len: 2, col: 6, row: 0, c: PALETTE.blue },
-    { id: 'F', orient: 'h', len: 2, col: 0, row: 5, c: PALETTE.cream }
-  ],
+  // Puzzle 2: 30 moves, 8 pieces
   [
     { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
-    { id: 'A', orient: 'v', len: 2, col: 2, row: 2, c: PALETTE.red },
-    { id: 'B', orient: 'v', len: 3, col: 4, row: 1, c: PALETTE.purple },
-    { id: 'C', orient: 'h', len: 2, col: 5, row: 5, c: PALETTE.orange },
-    { id: 'D', orient: 'v', len: 2, col: 6, row: 2, c: PALETTE.lblue },
-    { id: 'E', orient: 'h', len: 3, col: 0, row: 0, c: PALETTE.dgreen },
-    { id: 'F', orient: 'h', len: 2, col: 1, row: 6, c: PALETTE.cream },
-    { id: 'G', orient: 'v', len: 2, col: 3, row: 4, c: PALETTE.blue }
+    { id: 'A', orient: 'v', len: 3, col: 5, row: 5, c: PALETTE.blue },
+    { id: 'B', orient: 'h', len: 3, col: 3, row: 4, c: PALETTE.gray },
+    { id: 'C', orient: 'v', len: 3, col: 2, row: 2, c: PALETTE.red },
+    { id: 'D', orient: 'v', len: 3, col: 0, row: 5, c: PALETTE.orange },
+    { id: 'E', orient: 'v', len: 2, col: 1, row: 0, c: PALETTE.dgreen },
+    { id: 'F', orient: 'h', len: 3, col: 6, row: 4, c: PALETTE.cream },
+    { id: 'G', orient: 'h', len: 2, col: 2, row: 0, c: PALETTE.gold }
   ],
+  // Puzzle 3: 30 moves, 9 pieces
   [
-    { id: 'P', orient: 'h', len: 1, col: 2, row: 3, target: true, c: PALETTE.gold },
-    { id: 'A', orient: 'v', len: 3, col: 4, row: 0, c: PALETTE.red },
-    { id: 'B', orient: 'v', len: 2, col: 5, row: 2, c: PALETTE.purple },
-    { id: 'C', orient: 'h', len: 2, col: 0, row: 0, c: PALETTE.orange },
-    { id: 'D', orient: 'v', len: 2, col: 3, row: 2, c: PALETTE.lblue },
-    { id: 'E', orient: 'h', len: 3, col: 2, row: 5, c: PALETTE.dgreen },
-    { id: 'F', orient: 'v', len: 2, col: 6, row: 0, c: PALETTE.blue },
-    { id: 'G', orient: 'h', len: 2, col: 0, row: 3, c: PALETTE.cream }
+    { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
+    { id: 'A', orient: 'v', len: 2, col: 0, row: 6, c: PALETTE.gold },
+    { id: 'B', orient: 'v', len: 2, col: 6, row: 2, c: PALETTE.purple },
+    { id: 'C', orient: 'v', len: 3, col: 3, row: 1, c: PALETTE.lblue },
+    { id: 'D', orient: 'h', len: 3, col: 5, row: 1, c: PALETTE.blue },
+    { id: 'E', orient: 'v', len: 3, col: 1, row: 1, c: PALETTE.gray },
+    { id: 'F', orient: 'h', len: 2, col: 0, row: 4, c: PALETTE.red },
+    { id: 'G', orient: 'h', len: 3, col: 5, row: 0, c: PALETTE.orange },
+    { id: 'H', orient: 'h', len: 2, col: 4, row: 6, c: PALETTE.dgreen }
   ],
+  // Puzzle 4: 30 moves, 10 pieces
   [
-    { id: 'P', orient: 'h', len: 1, col: 1, row: 3, target: true, c: PALETTE.gold },
-    { id: 'A', orient: 'v', len: 2, col: 3, row: 2, c: PALETTE.red },
-    { id: 'B', orient: 'h', len: 2, col: 4, row: 0, c: PALETTE.purple },
-    { id: 'C', orient: 'v', len: 3, col: 5, row: 1, c: PALETTE.orange },
-    { id: 'D', orient: 'h', len: 2, col: 0, row: 6, c: PALETTE.lblue },
-    { id: 'E', orient: 'v', len: 2, col: 6, row: 2, c: PALETTE.dgreen },
-    { id: 'F', orient: 'h', len: 3, col: 2, row: 5, c: PALETTE.blue },
-    { id: 'G', orient: 'v', len: 2, col: 2, row: 0, c: PALETTE.cream }
+    { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
+    { id: 'A', orient: 'v', len: 3, col: 4, row: 0, c: PALETTE.orange },
+    { id: 'B', orient: 'h', len: 2, col: 5, row: 6, c: PALETTE.dgreen },
+    { id: 'C', orient: 'h', len: 2, col: 5, row: 4, c: PALETTE.cream },
+    { id: 'D', orient: 'v', len: 2, col: 2, row: 0, c: PALETTE.gold },
+    { id: 'E', orient: 'h', len: 3, col: 6, row: 0, c: PALETTE.purple },
+    { id: 'F', orient: 'v', len: 2, col: 1, row: 2, c: PALETTE.lblue },
+    { id: 'G', orient: 'v', len: 2, col: 2, row: 3, c: PALETTE.blue },
+    { id: 'H', orient: 'v', len: 3, col: 0, row: 6, c: PALETTE.gray },
+    { id: 'I', orient: 'v', len: 2, col: 0, row: 1, c: PALETTE.red }
+  ],
+  // Puzzle 5: 24 moves, 8 pieces
+  [
+    { id: 'P', orient: 'h', len: 1, col: 0, row: 3, target: true, c: PALETTE.gold },
+    { id: 'A', orient: 'h', len: 3, col: 5, row: 2, c: PALETTE.blue },
+    { id: 'B', orient: 'v', len: 2, col: 1, row: 5, c: PALETTE.gray },
+    { id: 'C', orient: 'v', len: 3, col: 4, row: 1, c: PALETTE.red },
+    { id: 'D', orient: 'v', len: 3, col: 0, row: 6, c: PALETTE.orange },
+    { id: 'E', orient: 'h', len: 2, col: 5, row: 6, c: PALETTE.dgreen },
+    { id: 'F', orient: 'v', len: 2, col: 3, row: 5, c: PALETTE.cream },
+    { id: 'G', orient: 'v', len: 3, col: 2, row: 6, c: PALETTE.gold }
   ]
 ];
 
