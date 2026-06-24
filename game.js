@@ -113,29 +113,135 @@ function drawHUD() {
   text('C:' + state.coins, VW - 64, 7, 8, PALETTE.gold);
 }
 
-function placeholderScreen(name, hint, next) {
+const STARS = [[20,16],[60,28],[110,12],[170,24],[220,10],[270,20],[330,30],[300,40],[50,44],[140,38]];
+
+function drawFantasyMap() {
+  for (let ty = 0; ty < VH; ty += 8) {
+    for (let tx = 0; tx < VW; tx += 8) {
+      const c = (((tx + ty) / 8) | 0) % 2 === 0 ? PALETTE.dgreen : PALETTE.green;
+      rect(tx, ty, 8, 8, c);
+    }
+  }
+  // pond
+  rect(150, 70, 64, 30, PALETTE.blue);
+  rect(154, 74, 56, 22, PALETTE.lblue);
+  rect(156, 76, 12, 3, PALETTE.cream);
+  // main dirt path
+  rect(0, 102, VW, 6, PALETTE.gold);
+  rect(0, 108, VW, 2, PALETTE.orange);
+  // decorative bushes/trees
+  const trees = [[18,18],[300,18],[60,170],[312,156],[210,28],[100,160]];
+  trees.forEach(function (t) {
+    rect(t[0] + 3, t[1] + 6, 4, 4, PALETTE.purple);
+    rect(t[0], t[1], 10, 8, PALETTE.dgreen);
+    rect(t[0] + 1, t[1] - 2, 8, 4, PALETTE.green);
+  });
+}
+
+function drawZoneIcon(kind, cx, cy) {
+  cx = Math.floor(cx); cy = Math.floor(cy);
+  if (kind === 'road') {
+    rect(cx - 14, cy - 1, 28, 5, PALETTE.dgray);
+    rect(cx - 12, cy, 2, 3, PALETTE.cream);
+    rect(cx - 4, cy, 2, 3, PALETTE.cream);
+    rect(cx + 6, cy, 2, 3, PALETTE.cream);
+    rect(cx - 10, cy - 6, 12, 6, PALETTE.red);
+    rect(cx - 8, cy - 5, 8, 2, PALETTE.lblue);
+  } else if (kind === 'cars') {
+    rect(cx - 12, cy - 6, 8, 5, PALETTE.orange);
+    rect(cx - 3, cy - 6, 8, 5, PALETTE.lblue);
+    rect(cx - 8, cy, 8, 5, PALETTE.red);
+    rect(cx + 1, cy, 8, 5, PALETTE.gold);
+  } else if (kind === 'sword') {
+    rect(cx - 8, cy - 7, 3, 14, PALETTE.cream);
+    rect(cx + 5, cy - 7, 3, 14, PALETTE.cream);
+    rect(cx - 9, cy + 6, 5, 3, PALETTE.gold);
+    rect(cx + 4, cy + 6, 5, 3, PALETTE.gold);
+  }
+}
+
+function drawZone(z) {
+  const hover = pointIn(mouse.x, mouse.y, z.x, z.y, z.w, z.h);
+  rect(z.x + 2, z.y + 3, z.w, z.h, PALETTE.dgray);
+  rect(z.x, z.y, z.w, z.h, hover ? PALETTE.cream : z.color);
+  rect(z.x, z.y, z.w, 2, PALETTE.void);
+  rect(z.x, z.y + z.h - 2, z.w, 2, PALETTE.void);
+  rect(z.x, z.y, 2, z.h, PALETTE.void);
+  rect(z.x + z.w - 2, z.y, 2, z.h, PALETTE.void);
+  drawZoneIcon(z.icon, z.x + z.w / 2, z.y + 20);
+  ctx.font = '7px "Press Start 2P", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = PALETTE.void;
+  ctx.fillText(z.label, Math.floor(z.x + z.w / 2), Math.floor(z.y + z.h - 11));
+  ctx.textAlign = 'left';
+}
+
+function placeholderScreen(name, hint) {
   return {
     draw: function () {
       rect(0, 0, VW, VH, PALETTE.bg);
-      textCenter(name, 60, 12, PALETTE.gold);
-      textCenter(hint, 110, 8, PALETTE.cream);
-      textCenter('[SPACE] next  [ESC] map', 160, 8, PALETTE.gray);
+      textCenter(name, 60, 14, PALETTE.gold);
+      textCenter(hint, 108, 8, PALETTE.cream);
       drawHUD();
     },
-    update: function () {
-      if (justPressed[' ']) setScreen(next || 'map');
-    }
+    update: function () {}
   };
 }
 
+const MAP_ZONES = [
+  { id: 'crossy', x: 14, y: 28, w: 80, h: 58, label: 'CROSSY', icon: 'road', color: PALETTE.green },
+  { id: 'rush', x: 286, y: 26, w: 80, h: 58, label: 'RUSH HR', icon: 'cars', color: PALETTE.orange },
+  { id: 'fight', x: 144, y: 134, w: 88, h: 58, label: 'FIGHTER', icon: 'sword', color: PALETTE.red }
+];
+
 const SCREENS = {
-  intro: placeholderScreen('ArcAIdia', 'press PLAY to begin', 'map'),
-  map: placeholderScreen('WORLD MAP', 'choose a game', 'crossy'),
-  crossy: placeholderScreen('CROSSY ROAD', 'reach the top', 'rush'),
-  rush: placeholderScreen('RUSH HOUR', 'free the target car', 'fight'),
-  fight: placeholderScreen('TURN FIGHTER', 'defeat the enemy', 'shop'),
-  shop: placeholderScreen('SHOP', 'buy lootboxes', 'collection'),
-  collection: placeholderScreen('COLLECTION', 'your plushies', 'intro')
+  intro: {
+    draw: function () {
+      rect(0, 0, VW, VH, PALETTE.purple);
+      STARS.forEach(function (s) { rect(s[0], s[1], 2, 2, PALETTE.cream); });
+      textCenter('ARCAIDIA', 50, 22, PALETTE.gold);
+      textCenter('arcade of ai&', 80, 8, PALETTE.cream);
+      uiButton('PLAY', VW / 2 - 34, 148, 68, 22, PALETTE.gold);
+    },
+    update: function () {
+      if (click && pointIn(click.x, click.y, VW / 2 - 34, 148, 68, 22)) setScreen('map');
+    }
+  },
+  map: {
+    draw: function () {
+      drawFantasyMap();
+      MAP_ZONES.forEach(drawZone);
+      uiButton('MENU', 6, 4, 50, 16, PALETTE.purple);
+      textCenter('click a zone', VH - 13, 7, PALETTE.cream);
+      drawHUD();
+    },
+    update: function () {
+      if (!click) return;
+      if (pointIn(click.x, click.y, 6, 4, 50, 16)) { setScreen('shop'); return; }
+      for (let i = 0; i < MAP_ZONES.length; i++) {
+        const z = MAP_ZONES[i];
+        if (pointIn(click.x, click.y, z.x, z.y, z.w, z.h)) { setScreen(z.id); return; }
+      }
+    }
+  },
+  crossy: placeholderScreen('CROSSY ROAD', 'reach the top   [ESC] map'),
+  rush: placeholderScreen('RUSH HOUR', 'free the car   [ESC] map'),
+  fight: placeholderScreen('TURN FIGHTER', 'defeat enemy   [ESC] map'),
+  shop: {
+    draw: function () {
+      rect(0, 0, VW, VH, PALETTE.bg);
+      textCenter('SHOP', 36, 14, PALETTE.gold);
+      textCenter('lootboxes coming soon', 78, 8, PALETTE.cream);
+      uiButton('COLLECTION', VW / 2 - 54, 116, 108, 20, PALETTE.dgreen);
+      textCenter('[ESC] map', VH - 15, 7, PALETTE.gray);
+      drawHUD();
+    },
+    update: function () {
+      if (click && pointIn(click.x, click.y, VW / 2 - 54, 116, 108, 20)) setScreen('collection');
+    }
+  },
+  collection: placeholderScreen('COLLECTION', 'your plushies   [ESC] map')
 };
 
 function loop(t) {
