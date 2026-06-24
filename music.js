@@ -143,5 +143,19 @@ function playSfx(type) {
     playNote(554, t + 0.04, 0.05, 'square', 0.2);
     playNote(659, t + 0.08, 0.05, 'square', 0.2);
     playNote(880, t + 0.12, 0.15, 'square', 0.2);
+  } else if (type === 'beam') {
+    playNote(200, t, 0.1, 'sawtooth', 0.15);
+    playNote(300, t + 0.08, 0.1, 'sawtooth', 0.18);
+    playNote(500, t + 0.16, 0.15, 'sawtooth', 0.22);
+    playNote(800, t + 0.3, 0.3, 'sawtooth', 0.25);
+    playNote(1200, t + 0.3, 0.3, 'square', 0.15);
+  } else if (type === 'barrage') {
+    for (var i = 0; i < 5; i++) playNote(400 + i * 60, t + i * 0.05, 0.04, 'square', 0.18);
+  } else if (type === 'storm') {
+    for (var i = 0; i < 6; i++) playNote(600 + Math.sin(i) * 200, t + i * 0.04, 0.06, 'triangle', 0.15);
+  } else if (type === 'overload') {
+    playNote(100, t, 0.4, 'sawtooth', 0.3);
+    playNote(1500, t, 0.05, 'square', 0.2);
+    playNote(80, t + 0.1, 0.5, 'sawtooth', 0.25);
   }
 }

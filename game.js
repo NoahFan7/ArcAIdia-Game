@@ -308,6 +308,50 @@ function placeholderScreen(name, hint) {
   };
 }
 
+const MAP_NPCS = [
+  { name: 'Feifan', x: 60, y: 45, vx: 0.3, vy: 0, minX: 30, maxX: 130, minY: 25, maxY: 190, dir: 1, t: 0 },
+  { name: 'Mario', x: 250, y: 50, vx: -0.25, vy: 0, minX: 200, maxX: 350, minY: 25, maxY: 190, dir: -1, t: 0 },
+  { name: 'Tetsuya', x: 100, y: 160, vx: 0.2, vy: 0, minX: 30, maxX: 250, minY: 25, maxY: 190, dir: 1, t: 0 },
+  { name: 'Raj', x: 300, y: 170, vx: -0.3, vy: 0, minX: 250, maxX: 360, minY: 25, maxY: 190, dir: -1, t: 0 },
+  { name: 'Nao', x: 180, y: 90, vx: 0, vy: 0.2, minX: 30, maxX: 360, minY: 25, maxY: 190, dir: 1, t: 0 },
+  { name: 'Atul', x: 80, y: 120, vx: 0.15, vy: 0.1, minX: 30, maxX: 360, minY: 25, maxY: 190, dir: 1, t: 0 }
+];
+
+function updateMapNpcs() {
+  for (var i = 0; i < MAP_NPCS.length; i++) {
+    var n = MAP_NPCS[i];
+    n.t++;
+    if (n.t % 90 === 0 || (n.x <= n.minX && n.vx < 0) || (n.x >= n.maxX && n.vx > 0) ||
+        (n.y <= n.minY && n.vy < 0) || (n.y >= n.maxY && n.vy > 0)) {
+      var r = Math.random();
+      if (r < 0.4) { n.vx = (Math.random() - 0.5) * 0.6; n.vy = 0; n.dir = n.vx > 0 ? 1 : -1; }
+      else if (r < 0.8) { n.vx = 0; n.vy = (Math.random() - 0.5) * 0.6; }
+      else { n.vx = 0; n.vy = 0; }
+    }
+    n.x += n.vx; n.y += n.vy;
+    n.x = Math.max(n.minX, Math.min(n.maxX, n.x));
+    n.y = Math.max(n.minY, Math.min(n.maxY, n.y));
+  }
+}
+
+function drawMapNpcs() {
+  for (var i = 0; i < MAP_NPCS.length; i++) {
+    var n = MAP_NPCS[i];
+    var cl = charLooks(n.name);
+    var shirt = cl.gender === 'f' ? [PALETTE.orange, PALETTE.purple, PALETTE.dgreen][i % 3] : [PALETTE.blue, PALETTE.red, PALETTE.green, PALETTE.gray, PALETTE.lblue][i % 5];
+    var bob = Math.sin(n.t * 0.15) * 1;
+    drawPerson(n.x, n.y + bob, { shirt: shirt, hair: cl.hair, skin: cl.skin, gender: cl.gender, hairStyle: cl.hairStyle });
+    ctx.font = '5px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = PALETTE.void;
+    ctx.fillText(n.name, n.x + 9, n.y - 6 + 1);
+    ctx.fillStyle = PALETTE.cream;
+    ctx.fillText(n.name, n.x + 9, n.y - 7);
+    ctx.textAlign = 'left';
+  }
+}
+
 const MAP_ZONES = [
   { id: 'crossy', x: 14, y: 30, w: 78, h: 54, label: 'CROSSY', icon: 'road', color: PALETTE.green },
   { id: 'mines', x: 292, y: 30, w: 78, h: 54, label: 'MINES', icon: 'hazard', color: PALETTE.orange },
@@ -818,7 +862,23 @@ const FIGHTERS = [
   { name: 'ATUL', role: 'Engineer', shirt: PALETTE.cream, hair: HAIR_COLORS.brown, skin: SKIN_TONES.brown, gender: 'm', hairStyle: 'short',
     hp: 155, atk: 13, sp: 'SYS REBOOT', spType: 'heal', spPow: 55 },
   { name: 'TETSUYA', role: 'Engineer', shirt: PALETTE.gray, hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short',
-    hp: 140, atk: 18, sp: 'FINAL BUILD', spType: 'dmg', spPow: 40 }
+    hp: 140, atk: 18, sp: 'FINAL BUILD', spType: 'dmg', spPow: 40 },
+  { name: 'NOAH', role: 'Intern', shirt: PALETTE.dgreen, hair: HAIR_COLORS.black, skin: SKIN_TONES.tan, gender: 'm', hairStyle: 'short',
+    hp: 135, atk: 14, sp: 'COFFEE RUSH', spType: 'rush', spPow: 15 },
+  { name: 'NOA', role: 'Intern', shirt: PALETTE.red, hair: HAIR_COLORS.red, skin: SKIN_TONES.white, gender: 'm', hairStyle: 'short',
+    hp: 130, atk: 13, sp: 'RED BEAM', spType: 'beam', spPow: 55 },
+  { name: 'SARIA', role: 'Intern', shirt: PALETTE.pink || PALETTE.orange, hair: HAIR_COLORS.brown, skin: SKIN_TONES.tan, gender: 'f', hairStyle: 'long',
+    hp: 140, atk: 12, sp: 'BLOSSOM STORM', spType: 'storm', spPow: 20 },
+  { name: 'SAKURAKO', role: 'Intern', shirt: PALETTE.purple, hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long',
+    hp: 135, atk: 14, sp: 'SAKURA SLASH', spType: 'slash', spPow: 45 },
+  { name: 'SHINON', role: 'Intern', shirt: PALETTE.blue, hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long',
+    hp: 130, atk: 15, sp: 'SHADOW BARRAGE', spType: 'barrage', spPow: 8 },
+  { name: 'RICHARD', role: 'Intern', shirt: PALETTE.lblue, hair: HAIR_COLORS.black, skin: SKIN_TONES.tan, gender: 'm', hairStyle: 'short',
+    hp: 145, atk: 12, sp: 'POWER NAP', spType: 'recharge', spPow: 40 },
+  { name: 'SAMER', role: 'Intern', shirt: PALETTE.green, hair: HAIR_COLORS.black, skin: SKIN_TONES.brown, gender: 'm', hairStyle: 'short',
+    hp: 140, atk: 13, sp: 'PAIR PROG', spType: 'debug', spPow: 6 },
+  { name: 'LAMU', role: 'Intern', shirt: PALETTE.cream, hair: HAIR_COLORS.black, skin: SKIN_TONES.white, gender: 'f', hairStyle: 'long',
+    hp: 125, atk: 16, sp: 'SYSTEM OVERLOAD', spType: 'overload', spPow: 60 }
 ];
 
 const ENEMY_WAVES = [
@@ -919,8 +979,12 @@ const FIGHT = {
   doSpecial: function () {
     if (this.turn !== 'player' || this.state !== 'play' || this.spCd > 0) return;
     const f = this.fighter; let msg = '';
-    this.spAnim = { type: f.spType, name: f.sp, t: 0, max: 50 };
+    this.spAnim = { type: f.spType, name: f.sp, t: 0, max: 55 };
     playSfx('special');
+    if (f.spType === 'beam') playSfx('beam');
+    else if (f.spType === 'barrage') playSfx('barrage');
+    else if (f.spType === 'storm') playSfx('storm');
+    else if (f.spType === 'overload') playSfx('overload');
     if (f.spType === 'dmg') {
       const dmg = f.spPow + Math.floor(Math.random() * 5);
       this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
@@ -942,6 +1006,48 @@ const FIGHT = {
       const h = f.spPow; this.player.hp = Math.min(this.player.maxhp, this.player.hp + h);
       this.pflash = 12;
       msg = f.sp + '! healed ' + h;
+    } else if (f.spType === 'rush') {
+      var totalDmg = 0;
+      for (var h = 0; h < 3; h++) totalDmg += f.spPow + Math.floor(Math.random() * 4);
+      this.enemy.hp = Math.max(0, this.enemy.hp - totalDmg);
+      this.eflash = 18; this.shake = 14; this.lungeT = 20;
+      msg = f.sp + '! 3 hits! ' + totalDmg + ' dmg!';
+    } else if (f.spType === 'beam') {
+      var bdmg = f.spPow + Math.floor(Math.random() * 8);
+      this.enemy.hp = Math.max(0, this.enemy.hp - bdmg);
+      this.eflash = 20; this.shake = 16; this.lungeT = 24;
+      msg = f.sp + '! ' + bdmg + ' dmg!';
+    } else if (f.spType === 'storm') {
+      var sdmg = f.spPow + Math.floor(Math.random() * 5);
+      this.enemy.hp = Math.max(0, this.enemy.hp - sdmg);
+      this.enemy.debuff += 3; this.eflash = 14;
+      msg = f.sp + '! ' + sdmg + ' dmg, ATK -3!';
+    } else if (f.spType === 'slash') {
+      var slDmg = f.spPow + Math.floor(Math.random() * 6);
+      this.enemy.hp = Math.max(0, this.enemy.hp - slDmg);
+      this.eflash = 16; this.shake = 12; this.lungeT = 18;
+      msg = f.sp + '! ' + slDmg + ' dmg!';
+    } else if (f.spType === 'barrage') {
+      var bDmg = 0;
+      for (var b = 0; b < 5; b++) bDmg += f.spPow + Math.floor(Math.random() * 3);
+      this.enemy.hp = Math.max(0, this.enemy.hp - bDmg);
+      this.eflash = 20; this.shake = 14; this.lungeT = 22;
+      msg = f.sp + '! 5 hits! ' + bDmg + ' dmg!';
+    } else if (f.spType === 'recharge') {
+      var rh = f.spPow; this.player.hp = Math.min(this.player.maxhp, this.player.hp + rh);
+      this.player.buff += 5; this.pflash = 14;
+      msg = f.sp + '! healed ' + rh + ', ATK +5!';
+    } else if (f.spType === 'debug') {
+      this.player.buff += f.spPow; this.enemy.debuff += f.spPow;
+      this.pflash = 8; this.eflash = 8;
+      msg = f.sp + '! ATK +' + f.spPow + ', enemy ATK -' + f.spPow;
+    } else if (f.spType === 'overload') {
+      var odmg = f.spPow + Math.floor(Math.random() * 10);
+      this.enemy.hp = Math.max(0, this.enemy.hp - odmg);
+      var recoil = Math.floor(odmg * 0.15);
+      this.player.hp = Math.max(1, this.player.hp - recoil);
+      this.eflash = 24; this.shake = 20; this.lungeT = 26; this.pflash = 6;
+      msg = f.sp + '! ' + odmg + ' dmg! recoil ' + recoil;
     }
     this.spCd = 3; this.log = [msg]; this.logT = 0; this.endTurn();
   },
@@ -1334,6 +1440,282 @@ const FIGHT = {
         ctx.textBaseline = 'top';
         ctx.fillStyle = PALETTE.green;
         ctx.fillText('HEAL!', cx, 50);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'rush') {
+      const pcx = px + 9, pcy = py + 9;
+      const ecx = ex + 7, ecy = ey + 9;
+      if (t < 6) {
+        for (var i = 0; i < 6; i++) {
+          var ang = (i / 6) * Math.PI * 2 + t * 0.5;
+          rect(pcx + Math.cos(ang) * 15 - 1, pcy + Math.sin(ang) * 15 - 1, 2, 2, PALETTE.gold);
+        }
+      } else {
+        var rp = (t - 6) / 40;
+        for (var s = 0; s < 3; s++) {
+          var sp = rp + s * 0.2;
+          if (sp > 1) continue;
+          var dashX = pcx + (ecx - pcx) * sp;
+          ctx.strokeStyle = PALETTE.gold;
+          ctx.lineWidth = 3;
+          ctx.globalAlpha = 1 - sp;
+          ctx.beginPath();
+          ctx.moveTo(pcx, pcy);
+          ctx.lineTo(dashX, pcy);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          rect(dashX - 2, pcy - 6, 4, 12, PALETTE.gold);
+          for (var pi = 0; pi < 4; pi++) {
+            rect(dashX + (Math.random() - 0.5) * 8 - 1, pcy + (Math.random() - 0.5) * 8 - 1, 2, 2, PALETTE.cream);
+          }
+        }
+      }
+      if (t > 6 && t < 40 && t % 5 < 3) {
+        ctx.font = '10px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.gold;
+        ctx.fillText('RUSH!', cx, 50);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'beam') {
+      const pcx = px + 9, pcy = py + 9;
+      const ecx = ex + 7, ecy = ey + 9;
+      if (t < 15) {
+        var charge = t / 15;
+        for (var i = 0; i < 16; i++) {
+          var ang = (i / 16) * Math.PI * 2;
+          var rad = 30 - charge * 25;
+          var x = pcx + Math.cos(ang) * rad;
+          var y = pcy + Math.sin(ang) * rad;
+          rect(x - 1, y - 1, 2, 2, PALETTE.red);
+        }
+        ctx.strokeStyle = PALETTE.red;
+        ctx.lineWidth = 1 + charge * 2;
+        ctx.globalAlpha = charge;
+        ctx.beginPath();
+        ctx.arc(pcx, pcy, 5 + charge * 8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        if (t % 3 < 2) {
+          ctx.font = '8px "Press Start 2P", monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillStyle = PALETTE.red;
+          ctx.fillText('CHARGING...', cx, 45);
+          ctx.textAlign = 'left';
+        }
+      } else {
+        var bp = (t - 15) / 30;
+        var beamW = bp < 0.7 ? 8 : Math.max(1, 8 * (1 - (bp - 0.7) / 0.3));
+        var cols2 = [PALETTE.red, PALETTE.orange, PALETTE.gold, PALETTE.cream];
+        for (var bw = 0; bw < 4; bw++) {
+          ctx.strokeStyle = cols2[bw];
+          ctx.lineWidth = beamW - bw * 2;
+          if (ctx.lineWidth < 1) continue;
+          ctx.globalAlpha = 1 - bw * 0.2;
+          ctx.beginPath();
+          ctx.moveTo(pcx + 14, pcy);
+          ctx.lineTo(ecx, ecy);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        if (bp < 0.8) {
+          for (var i = 0; i < 10; i++) {
+            var sp2 = (i / 10 + bp) % 1;
+            rect(pcx + 14 + (ecx - pcx - 14) * sp2 + (Math.random() - 0.5) * 6, pcy + (Math.random() - 0.5) * 6, 2, 2, PALETTE.cream);
+          }
+        }
+        if (bp < 0.8) {
+          ctx.font = '12px "Press Start 2P", monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillStyle = PALETTE.red;
+          ctx.fillText('KAMEHAMEHA!', cx, 48);
+          ctx.textAlign = 'left';
+        }
+      }
+    } else if (a.type === 'storm') {
+      const ecx = ex + 7, ecy = ey + 9;
+      for (var i = 0; i < 12; i++) {
+        var ang = (i / 12) * Math.PI * 2 + t * 0.15;
+        var rad = 8 + Math.sin(t * 0.1 + i) * 8 + i;
+        var x = ecx + Math.cos(ang) * rad;
+        var y = ecy + Math.sin(ang) * rad;
+        rect(x - 1, y - 1, 2, 2, PALETTE.red);
+        rect(x - 2, y - 3, 4, 2, PALETTE.pink || PALETTE.orange);
+        rect(x - 1, y - 5, 2, 2, PALETTE.red);
+      }
+      if (p > 0.3) {
+        for (var i = 0; i < 8; i++) {
+          var sp = (i / 8 + p) % 1;
+          rect(ecx + (Math.random() - 0.5) * 30, ecy - sp * 20, 1, 2, PALETTE.red);
+        }
+      }
+      if (t % 6 < 3) {
+        ctx.font = '9px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.red;
+        ctx.fillText('BLOSSOM STORM!', cx, 48);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'slash') {
+      const ecx = ex + 7, ecy = ey + 9;
+      if (t < 8) {
+        ctx.strokeStyle = PALETTE.purple;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.moveTo(ecx - 12, ecy - 12);
+        ctx.lineTo(ecx + 12, ecy + 12);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(ecx + 12, ecy - 12);
+        ctx.lineTo(ecx - 12, ecy + 12);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      } else {
+        var sp2 = (t - 8) / 30;
+        for (var i = 0; i < 8; i++) {
+          var ang = (i / 8) * Math.PI * 2 + sp2 * 4;
+          var rad = sp2 * 20;
+          rect(ecx + Math.cos(ang) * rad - 1, ecy + Math.sin(ang) * rad - 1, 2, 2, [PALETTE.purple, PALETTE.red, PALETTE.cream][i % 3]);
+        }
+      }
+      if (t < 25 && t % 5 < 3) {
+        ctx.font = '10px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.purple;
+        ctx.fillText('SLASH!', ecx, ecy - 16);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'barrage') {
+      const ecx = ex + 7, ecy = ey + 9;
+      var hitCount = Math.floor(t / 8);
+      for (var h = 0; h < Math.min(hitCount, 5); h++) {
+        var ht = (t - h * 8) % 8;
+        if (ht < 5) {
+          var hx = ecx + (Math.random() - 0.5) * 10;
+          var hy = ecy + (Math.random() - 0.5) * 10;
+          ctx.strokeStyle = PALETTE.cream;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(hx - 4, hy - 4);
+          ctx.lineTo(hx + 4, hy + 4);
+          ctx.moveTo(hx + 4, hy - 4);
+          ctx.lineTo(hx - 4, hy + 4);
+          ctx.stroke();
+          for (var i = 0; i < 3; i++) {
+            rect(hx + (Math.random() - 0.5) * 6, hy + (Math.random() - 0.5) * 6, 1, 1, PALETTE.gold);
+          }
+        }
+      }
+      if (t % 4 < 2 && t < 45) {
+        ctx.font = '9px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.blue;
+        ctx.fillText('BARRAGE!', cx, 48);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'recharge') {
+      const pcx = px + 9, pcy = py + 9;
+      for (var i = 0; i < 4; i++) {
+        var sp = (i / 4 + p) % 1;
+        var x = pcx - 4 + (i % 2) * 12 + Math.sin(t * 0.2 + i) * 2;
+        var y = pcy - 8 - sp * 20;
+        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.lblue;
+        ctx.fillText('z', x, y);
+        ctx.textAlign = 'left';
+      }
+      for (var i = 0; i < 6; i++) {
+        var ang = (i / 6) * Math.PI * 2 + t * 0.1;
+        var rad = 10 + Math.sin(t * 0.15) * 3;
+        rect(pcx + Math.cos(ang) * rad - 1, pcy + Math.sin(ang) * rad - 1, 2, 2, PALETTE.green);
+        rect(pcx + Math.cos(ang) * (rad + 3) - 1, pcy + Math.sin(ang) * (rad + 3) - 1, 1, 1, PALETTE.gold);
+      }
+      if (t % 8 < 4) {
+        ctx.font = '9px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.lblue;
+        ctx.fillText('RECHARGING!', cx, 48);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'debug') {
+      const pcx = px + 9, pcy = py + 9;
+      const ecx = ex + 7, ecy = ey + 9;
+      var codes = ['0', '1', '</>', '{}', 'bug', 'fix'];
+      for (var i = 0; i < 6; i++) {
+        var sp = (i / 6 + p * 1.5) % 1;
+        var orbitX = (pcx + ecx) / 2 + Math.cos(t * 0.1 + i * 1.05) * 40;
+        var orbitY = pcy + Math.sin(t * 0.1 + i * 1.05) * 10 - sp * 10;
+        ctx.font = '5px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = i % 2 === 0 ? PALETTE.green : PALETTE.red;
+        ctx.fillText(codes[i], orbitX, orbitY);
+        ctx.textAlign = 'left';
+      }
+      if (t % 6 < 3) {
+        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.green;
+        ctx.fillText('DEBUG MODE!', cx, 48);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'overload') {
+      const ecx = ex + 7, ecy = ey + 9;
+      const pcx = px + 9, pcy = py + 9;
+      if (t < 10) {
+        for (var i = 0; i < 20; i++) {
+          var ang = (i / 20) * Math.PI * 2;
+          var rad = 35 - t * 3;
+          rect(pcx + Math.cos(ang) * rad - 1, pcy + Math.sin(ang) * rad - 1, 2, 2, PALETTE.red);
+        }
+        ctx.strokeStyle = PALETTE.red;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.5 + t * 0.05;
+        ctx.beginPath();
+        ctx.arc(pcx, pcy, 35 - t * 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      } else {
+        var op = (t - 10) / 35;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 1 - op);
+        for (var r = 0; r < VW; r += 8) {
+          for (var c2 = 0; c2 < VH; c2 += 8) {
+            if (Math.random() < 0.15) {
+              rect(r, c2, 4, 4, Math.random() < 0.5 ? PALETTE.red : PALETTE.orange);
+            }
+          }
+        }
+        ctx.restore();
+        for (var ring = 0; ring < 4; ring++) {
+          var rp = op + ring * 0.1;
+          if (rp > 1) continue;
+          ctx.strokeStyle = [PALETTE.red, PALETTE.orange, PALETTE.gold, PALETTE.cream][ring];
+          ctx.lineWidth = 4 - ring;
+          ctx.globalAlpha = 1 - rp;
+          ctx.beginPath();
+          ctx.arc(ecx, ecy, rp * 50, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      }
+      if (t % 5 < 3) {
+        ctx.font = '12px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.red;
+        ctx.fillText('OVERLOAD!', cx, 45);
         ctx.textAlign = 'left';
       }
     }
@@ -1742,12 +2124,14 @@ const SCREENS = {
   map: {
     draw: function () {
       drawOfficeMap();
+      drawMapNpcs();
       MAP_ZONES.forEach(drawZone);
       uiButton('MENU', 6, 4, 50, 16, PALETTE.purple);
       textCenter('click a zone', VH - 13, 7, PALETTE.cream);
       drawHUD();
     },
     update: function () {
+      updateMapNpcs();
       if (!click) return;
       if (pointIn(click.x, click.y, 6, 4, 50, 16)) { setScreen('shop'); return; }
       for (let i = 0; i < MAP_ZONES.length; i++) {
