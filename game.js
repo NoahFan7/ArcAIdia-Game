@@ -50,6 +50,7 @@ function setScreen(name) {
 
 function addCoins(n) {
   state.coins += n;
+  if (n > 0) playSfx('coin');
   saveState();
 }
 
@@ -111,6 +112,17 @@ function drawHUD() {
   rect(VW - 70, 4, 66, 14, PALETTE.void);
   rect(VW - 68, 6, 62, 10, PALETTE.dgray);
   text('C:' + state.coins, VW - 64, 7, 8, PALETTE.gold);
+  const mx = VW - 92, my = 4;
+  const mhover = pointIn(mouse.x, mouse.y, mx, my, 18, 14);
+  rect(mx, my, 18, 14, mhover ? PALETTE.dgray : PALETTE.void);
+  rect(mx + 1, my + 1, 16, 12, musicPlaying ? PALETTE.dgreen : PALETTE.dgray);
+  ctx.font = '7px "Press Start 2P", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = PALETTE.void;
+  ctx.fillText(musicPlaying ? 'M' : 'X', mx + 9, my + 3);
+  ctx.textAlign = 'left';
+  if (click && pointIn(click.x, click.y, mx, my, 18, 14)) { toggleMusic(); playSfx('click'); }
 }
 
 const STARS = [[20,16],[60,28],[110,12],[170,24],[220,10],[270,20],[330,30],[300,40],[50,44],[140,38]];
@@ -341,12 +353,12 @@ const CROSSY = {
         if (this.lanes[i].row !== vrow) continue;
         const ws = this.lanes[i].workers;
         for (let j = 0; j < ws.length; j++) {
-          if (Math.abs(ws[j].col + 0.5 - pfcol) < 0.7) { this.state = 'dead'; this.flash = 20; break; }
+          if (Math.abs(ws[j].col + 0.5 - pfcol) < 0.7) { this.state = 'dead'; this.flash = 20; playSfx('lose'); break; }
         }
       }
       if (vrow <= 0) {
         this.state = 'win';
-        addCoins(10);
+        addCoins(10); playSfx('win');
       }
     }
     if (this.flash > 0) this.flash--;
@@ -535,6 +547,7 @@ const MINES = {
     if (cell.hazard) {
       this.state = 'dead';
       this.flashT = 20;
+      playSfx('lose');
       for (let r = 0; r < this.ROWS; r++) {
         for (let c = 0; c < this.COLS; c++) {
           if (this.grid[r][c].hazard) this.grid[r][c].revealed = true;
@@ -545,7 +558,7 @@ const MINES = {
     this.floodReveal(hit.r, hit.c);
     if (this.revealedCount >= this.COLS * this.ROWS - this.NUM_HAZARDS) {
       this.state = 'win';
-      addCoins(30);
+      addCoins(30); playSfx('win');
     }
   },
   numColor: function (n) {
@@ -710,6 +723,7 @@ const FIGHT = {
     const dmg = this.player.atk + this.player.buff + Math.floor(Math.random() * 4);
     this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
     this.eflash = 10; this.shake = 6;
+    playSfx('hit');
     this.log = [this.player.name + ' attacks! ' + dmg + ' dmg'];
     this.logT = 0; this.endTurn();
   },
@@ -742,9 +756,9 @@ const FIGHT = {
   },
   endTurn: function () {
     if (this.enemy.hp <= 0) {
-      this.state = 'win'; addCoins(50); return;
+      this.state = 'win'; addCoins(50); playSfx('win'); return;
     }
-    if (this.player.hp <= 0) { this.state = 'lose'; return; }
+    if (this.player.hp <= 0) { this.state = 'lose'; playSfx('lose'); return; }
     this.turn = 'enemy'; this.logT = 0;
   },
   enemyTurn: function () {
@@ -754,7 +768,7 @@ const FIGHT = {
     this.pflash = 10; this.shake = 6;
     this.log = [this.enemy.name + ' hits! ' + dmg + ' dmg'];
     this.logT = 0; this.spCd = Math.max(0, this.spCd - 1);
-    if (this.player.hp <= 0) { this.state = 'lose'; return; }
+    if (this.player.hp <= 0) { this.state = 'lose'; playSfx('lose'); return; }
     this.turn = 'player';
   },
   update: function () {
@@ -1194,7 +1208,7 @@ const SCREENS = {
       uiButton('PLAY', VW / 2 - 34, 148, 68, 22, PALETTE.gold);
     },
     update: function () {
-      if (click && pointIn(click.x, click.y, VW / 2 - 34, 148, 68, 22)) setScreen('map');
+      if (click && pointIn(click.x, click.y, VW / 2 - 34, 148, 68, 22)) { startMusic(); setScreen('map'); }
     }
   },
   map: {
