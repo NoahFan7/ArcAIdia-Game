@@ -43,9 +43,40 @@ function saveState() {
   } catch (e) {}
 }
 
+let transition = { active: false, t: 0, max: 20, target: null, fromScreen: null };
+
 function setScreen(name) {
-  state.screen = name;
-  if (SCREENS[name] && SCREENS[name].enter) SCREENS[name].enter();
+  if (transition.active) return;
+  transition.active = true;
+  transition.t = 0;
+  transition.target = name;
+  transition.fromScreen = state.screen;
+  playSfx('select');
+}
+
+function finishTransition() {
+  state.screen = transition.target;
+  transition.active = false;
+  transition.t = 0;
+  if (SCREENS[state.screen] && SCREENS[state.screen].enter) SCREENS[state.screen].enter();
+}
+
+function drawTransition() {
+  if (!transition.active) return;
+  const t = transition.t;
+  const max = transition.max;
+  const p = t / max;
+  if (t < max / 2) {
+    const w = VW * (p * 2);
+    rect(0, 0, w, VH, PALETTE.void);
+    rect(w, 0, 2, VH, PALETTE.gold);
+    rect(w + 2, 0, 1, VH, PALETTE.cream);
+  } else {
+    const w = VW * ((p - 0.5) * 2);
+    rect(w, 0, VW - w, VH, PALETTE.void);
+    rect(w - 2, 0, 2, VH, PALETTE.gold);
+    rect(w - 3, 0, 1, VH, PALETTE.cream);
+  }
 }
 
 function addCoins(n) {
@@ -871,7 +902,8 @@ const FIGHT = {
   doSpecial: function () {
     if (this.turn !== 'player' || this.state !== 'play' || this.spCd > 0) return;
     const f = this.fighter; let msg = '';
-    this.spAnim = { type: f.spType, name: f.sp, t: 0, max: 40 };
+    this.spAnim = { type: f.spType, name: f.sp, t: 0, max: 50 };
+    playSfx('special');
     if (f.spType === 'dmg') {
       const dmg = f.spPow + Math.floor(Math.random() * 5);
       this.enemy.hp = Math.max(0, this.enemy.hp - dmg);
@@ -905,8 +937,6 @@ const FIGHT = {
       this.log = [this.enemy.name + ' defeated! Next round...'];
       this.logT = 0;
       this.state = 'wave';
-      const healAmt = Math.floor(this.player.maxhp * 0.3);
-      this.player.hp = Math.min(this.player.maxhp, this.player.hp + healAmt);
       return;
     }
     if (this.player.hp <= 0) { this.state = 'lose'; playSfx('lose'); return; }
@@ -1041,89 +1071,224 @@ const FIGHT = {
     const t = a.t;
     const p = t / a.max;
     const cx = VW / 2;
+    if (p < 0.15) {
+      const flash = p / 0.15;
+      ctx.save();
+      ctx.globalAlpha = (1 - flash) * 0.4;
+      rect(0, 0, VW, VH, PALETTE.cream);
+      ctx.restore();
+    }
     if (a.type === 'dmg') {
-      const numP = 8 + Math.floor(t / 3);
-      for (let i = 0; i < numP; i++) {
-        const ang = (i / numP) * Math.PI * 2 + t * 0.2;
-        const rad = 4 + t * 1.2;
-        const x = ex + 7 + Math.cos(ang) * rad;
-        const y = ey + 9 + Math.sin(ang) * rad;
-        const cols = [PALETTE.red, PALETTE.orange, PALETTE.gold, PALETTE.cream];
-        rect(x - 1, y - 1, 2, 2, cols[i % cols.length]);
+      const ecx = ex + 7, ecy = ey + 9;
+      if (t < 10) {
+        const charge = t / 10;
+        for (let i = 0; i < 12; i++) {
+          const ang = (i / 12) * Math.PI * 2;
+          const rad = 25 - charge * 20;
+          const x = ecx + Math.cos(ang) * rad;
+          const y = ecy + Math.sin(ang) * rad;
+          rect(x - 1, y - 1, 2, 2, PALETTE.gold);
+        }
+        ctx.strokeStyle = PALETTE.gold;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(ecx, ecy, 25 - charge * 20, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        const ep = (t - 10) / 25;
+        if (ep < 1) {
+          for (let ring = 0; ring < 3; ring++) {
+            const rp = ep + ring * 0.15;
+            if (rp > 1) continue;
+            const rad = rp * 35;
+            const cols = [PALETTE.red, PALETTE.orange, PALETTE.gold];
+            ctx.strokeStyle = cols[ring];
+            ctx.lineWidth = 3 - ring;
+            ctx.globalAlpha = 1 - rp;
+            ctx.beginPath();
+            ctx.arc(ecx, ecy, rad, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+          }
+          const numP = 16;
+          for (let i = 0; i < numP; i++) {
+            const ang = (i / numP) * Math.PI * 2 + t * 0.3;
+            const speed = 1 + (i % 3);
+            const rad = ep * 30 * speed;
+            const x = ecx + Math.cos(ang) * rad;
+            const y = ecy + Math.sin(ang) * rad;
+            const cols = [PALETTE.red, PALETTE.orange, PALETTE.gold, PALETTE.cream];
+            const sz = 2 + (i % 2);
+            rect(x - sz/2, y - sz/2, sz, sz, cols[i % cols.length]);
+          }
+        }
       }
-      if (t > 8 && t < 24 && t % 4 < 2) {
-        ctx.font = '10px "Press Start 2P", monospace';
+      if (t > 10 && t < 35 && t % 6 < 3) {
+        ctx.font = '12px "Press Start 2P", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillStyle = PALETTE.gold;
-        ctx.fillText('POW!', ex + 7, ey - 4);
+        ctx.fillText('POW!', ecx, ey - 16);
         ctx.textAlign = 'left';
       }
     } else if (a.type === 'drain') {
-      for (let i = 0; i < 6; i++) {
-        const sp = (i / 6 + p) % 1;
-        const x = ex + 7 + (px + 7 - (ex + 7)) * sp;
-        const y = ey + 9 + (py + 9 - (ey + 9)) * sp - Math.sin(sp * Math.PI) * 20;
-        rect(x - 1, y - 1, 2, 2, PALETTE.purple);
-        rect(x - 2, y - 2, 4, 4, PALETTE.lblue);
+      const ecx = ex + 7, ecy = ey + 9;
+      const pcx = px + 9, pcy = py + 9;
+      if (t < 8) {
+        for (let i = 0; i < 8; i++) {
+          const ang = (i / 8) * Math.PI * 2 + t * 0.5;
+          const rad = 12 + Math.sin(t * 0.3) * 4;
+          rect(ecx + Math.cos(ang) * rad - 1, ecy + Math.sin(ang) * rad - 1, 2, 2, PALETTE.purple);
+        }
+      } else {
+        for (let i = 0; i < 8; i++) {
+          const sp = ((i / 8 + p * 1.5) % 1);
+          const x = ecx + (pcx - ecx) * sp;
+          const y = ecy + (pcy - ecy) * sp - Math.sin(sp * Math.PI) * 15;
+          const cols = [PALETTE.purple, PALETTE.lblue, PALETTE.cream];
+          const sz = 3 - Math.floor(sp * 2);
+          rect(x - sz, y - sz, sz * 2, sz * 2, cols[i % cols.length]);
+          rect(x - 1, y - 1, 2, 2, PALETTE.gold);
+        }
+        if (p > 0.5) {
+          for (let i = 0; i < 6; i++) {
+            const ang = (i / 6) * Math.PI * 2 + t * 0.2;
+            const rad = 6 + (p - 0.5) * 20;
+            rect(pcx + Math.cos(ang) * rad - 1, pcy + Math.sin(ang) * rad - 1, 2, 2, PALETTE.green);
+          }
+        }
       }
-      if (t % 6 < 3) {
-        ctx.font = '8px "Press Start 2P", monospace';
+      if (t % 8 < 4) {
+        ctx.font = '9px "Press Start 2P", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillStyle = PALETTE.purple;
-        ctx.fillText('DRAIN!', cx, ey - 12);
+        ctx.fillText('DRAIN!', cx, 50);
         ctx.textAlign = 'left';
       }
     } else if (a.type === 'buff') {
-      for (let i = 0; i < 5; i++) {
-        const sp = (i / 5 + p * 2) % 1;
-        const x = px + 7 + Math.sin(t * 0.3 + i) * 12;
-        const y = py + 20 - sp * 30;
-        rect(x - 1, y - 1, 2, 2, PALETTE.gold);
-        if (sp > 0.8) rect(x - 2, y - 2, 4, 4, PALETTE.cream);
+      const pcx = px + 9, pcy = py + 9;
+      if (t < 10) {
+        for (let i = 0; i < 3; i++) {
+          const rad = 20 - (t + i * 3) * 2;
+          if (rad < 0) continue;
+          ctx.strokeStyle = PALETTE.gold;
+          ctx.lineWidth = 2;
+          ctx.globalAlpha = 0.6;
+          ctx.beginPath();
+          ctx.arc(pcx, pcy, rad, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      } else {
+        for (let i = 0; i < 8; i++) {
+          const sp = ((i / 8 + p * 2) % 1);
+          const ang = i * 0.8 + t * 0.1;
+          const x = pcx + Math.sin(ang) * 14;
+          const y = pcy + 12 - sp * 35;
+          const sz = 2 + Math.sin(sp * Math.PI) * 2;
+          rect(x - sz/2, y - sz/2, sz, sz, PALETTE.gold);
+          if (sp > 0.6) {
+            rect(x - 2, y - 4, 4, 2, PALETTE.gold);
+            rect(x - 1, y - 6, 2, 2, PALETTE.gold);
+            rect(x - 1, y - 2, 2, 2, PALETTE.cream);
+          }
+        }
+        if (p > 0.3 && p < 0.7) {
+          ctx.strokeStyle = PALETTE.gold;
+          ctx.lineWidth = 2;
+          ctx.globalAlpha = (0.7 - p) * 2;
+          ctx.beginPath();
+          ctx.arc(pcx, pcy, 18 + p * 10, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
       }
       if (t % 8 < 4) {
-        ctx.font = '8px "Press Start 2P", monospace';
+        ctx.font = '9px "Press Start 2P", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillStyle = PALETTE.gold;
-        ctx.fillText('BUFF UP!', px + 7, py - 12);
+        ctx.fillText('POWER UP!', cx, 50);
         ctx.textAlign = 'left';
       }
     } else if (a.type === 'debuff') {
-      for (let i = 0; i < 6; i++) {
-        const ang = (i / 6) * Math.PI * 2 + t * 0.15;
-        const rad = 10 + Math.sin(t * 0.2 + i) * 4;
-        const x = ex + 7 + Math.cos(ang) * rad;
-        const y = ey + 9 + Math.sin(ang) * rad;
-        rect(x - 1, y - 1, 2, 2, PALETTE.gray);
-      }
-      if (t % 8 < 4) {
-        ctx.font = '7px "Press Start 2P", monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillStyle = PALETTE.gray;
-        ctx.fillText('WEAKEN!', ex + 7, ey - 12);
-        ctx.textAlign = 'left';
-      }
-    } else if (a.type === 'heal') {
-      for (let i = 0; i < 5; i++) {
-        const sp = (i / 5 + p) % 1;
-        const x = px + 3 + (i % 3) * 5 + Math.sin(t * 0.2 + i) * 3;
-        const y = py + 20 - sp * 25;
-        rect(x - 1, y - 1, 2, 2, PALETTE.green);
-        if (sp > 0.7) {
-          rect(x - 2, y - 3, 4, 2, PALETTE.green);
-          rect(x - 1, y - 5, 2, 2, PALETTE.green);
+      const ecx = ex + 7, ecy = ey + 9;
+      if (t < 8) {
+        for (let i = 0; i < 6; i++) {
+          const ang = (i / 6) * Math.PI * 2 + t * 0.4;
+          const rad = 25 - t * 2.5;
+          rect(ecx + Math.cos(ang) * rad - 1, ecy + Math.sin(ang) * rad - 1, 2, 2, PALETTE.gray);
+        }
+      } else {
+        for (let i = 0; i < 10; i++) {
+          const ang = (i / 10) * Math.PI * 2 + t * 0.12;
+          const rad = 8 + Math.sin(t * 0.15 + i) * 6;
+          const x = ecx + Math.cos(ang) * rad;
+          const y = ecy + Math.sin(ang) * rad;
+          const cols = [PALETTE.gray, PALETTE.dgray, PALETTE.purple];
+          rect(x - 1, y - 1, 2, 2, cols[i % cols.length]);
+        }
+        if (t % 10 < 5) {
+          ctx.strokeStyle = PALETTE.gray;
+          ctx.lineWidth = 1;
+          ctx.globalAlpha = 0.5;
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.arc(ecx, ecy, 10 + i * 5, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.globalAlpha = 1;
         }
       }
       if (t % 8 < 4) {
         ctx.font = '8px "Press Start 2P", monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
+        ctx.fillStyle = PALETTE.gray;
+        ctx.fillText('WEAKEN!', ecx, ey - 16);
+        ctx.textAlign = 'left';
+      }
+    } else if (a.type === 'heal') {
+      const pcx = px + 9, pcy = py + 9;
+      if (t < 8) {
+        for (let i = 0; i < 6; i++) {
+          const ang = (i / 6) * Math.PI * 2;
+          const rad = 18 - t * 2;
+          rect(pcx + Math.cos(ang) * rad - 1, pcy + Math.sin(ang) * rad - 1, 2, 2, PALETTE.green);
+        }
+      } else {
+        for (let i = 0; i < 8; i++) {
+          const sp = ((i / 8 + p * 1.5) % 1);
+          const x = pcx + Math.sin(t * 0.15 + i * 1.2) * 12;
+          const y = pcy + 12 - sp * 30;
+          rect(x - 1, y - 1, 2, 2, PALETTE.green);
+          if (sp > 0.4) {
+            rect(x - 2, y - 3, 4, 2, PALETTE.green);
+            rect(x - 1, y - 5, 2, 2, PALETTE.green);
+            rect(x - 1, y - 1, 2, 2, PALETTE.dgreen);
+          }
+          if (sp > 0.7 && sp < 0.9) {
+            rect(x - 3, y - 2, 1, 1, PALETTE.cream);
+            rect(x + 3, y - 2, 1, 1, PALETTE.cream);
+          }
+        }
+        if (p > 0.3 && p < 0.8) {
+          ctx.strokeStyle = PALETTE.green;
+          ctx.lineWidth = 2;
+          ctx.globalAlpha = (0.8 - p) * 1.5;
+          ctx.beginPath();
+          ctx.arc(pcx, pcy, 15 + (p - 0.3) * 25, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      }
+      if (t % 8 < 4) {
+        ctx.font = '9px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
         ctx.fillStyle = PALETTE.green;
-        ctx.fillText('+HEAL!', px + 7, py - 12);
+        ctx.fillText('HEAL!', cx, 50);
         ctx.textAlign = 'left';
       }
     }
@@ -1542,6 +1707,24 @@ const SCREENS = {
 function loop(t) {
   ctx.fillStyle = PALETTE.void;
   ctx.fillRect(0, 0, VW, VH);
+  if (transition.active) {
+    transition.t++;
+    const s = SCREENS[transition.fromScreen] || SCREENS.intro;
+    s.draw();
+    if (transition.t >= transition.max / 2 && state.screen !== transition.target) {
+      state.screen = transition.target;
+      if (SCREENS[state.screen] && SCREENS[state.screen].enter) SCREENS[state.screen].enter();
+    }
+    drawTransition();
+    if (transition.t >= transition.max) {
+      transition.active = false;
+      transition.t = 0;
+    }
+    click = null;
+    justPressed = {};
+    requestAnimationFrame(loop);
+    return;
+  }
   const s = SCREENS[state.screen] || SCREENS.intro;
   s.draw();
   s.update();

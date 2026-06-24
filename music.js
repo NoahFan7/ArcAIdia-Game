@@ -134,5 +134,14 @@ function playSfx(type) {
     playNote(80, t, 0.3, 'sawtooth', 0.3);
     playNote(60, t + 0.05, 0.4, 'sawtooth', 0.25);
     playNote(200, t, 0.05, 'square', 0.2);
+  } else if (type === 'select') {
+    playNote(523, t, 0.05, 'square', 0.15);
+    playNote(659, t + 0.05, 0.05, 'square', 0.15);
+    playNote(784, t + 0.1, 0.08, 'square', 0.15);
+  } else if (type === 'special') {
+    playNote(440, t, 0.05, 'square', 0.2);
+    playNote(554, t + 0.04, 0.05, 'square', 0.2);
+    playNote(659, t + 0.08, 0.05, 'square', 0.2);
+    playNote(880, t + 0.12, 0.15, 'square', 0.2);
   }
 }
