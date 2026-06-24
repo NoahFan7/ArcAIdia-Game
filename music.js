@@ -124,5 +124,15 @@ function playSfx(type) {
     playNote(1319, t + 0.06, 0.1, 'square', 0.2);
   } else if (type === 'click') {
     playNote(440, t, 0.03, 'square', 0.12);
+  } else if (type === 'flag') {
+    playNote(660, t, 0.04, 'square', 0.15);
+    playNote(880, t + 0.04, 0.06, 'square', 0.15);
+  } else if (type === 'reveal') {
+    playNote(523, t, 0.03, 'triangle', 0.1);
+    playNote(659, t + 0.03, 0.04, 'triangle', 0.1);
+  } else if (type === 'boom') {
+    playNote(80, t, 0.3, 'sawtooth', 0.3);
+    playNote(60, t + 0.05, 0.4, 'sawtooth', 0.25);
+    playNote(200, t, 0.05, 'square', 0.2);
   }
 }

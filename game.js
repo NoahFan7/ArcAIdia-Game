@@ -540,7 +540,7 @@ const MINES = {
     for (let r = 0; r < this.ROWS; r++) {
       this.grid.push([]);
       for (let c = 0; c < this.COLS; c++) {
-        this.grid[r].push({ hazard: false, revealed: false, flagged: false, adj: 0 });
+        this.grid[r].push({ hazard: false, revealed: false, flagged: false, adj: 0, revealAnim: 0, flagAnim: 0 });
       }
     }
     this.firstClick = true;
@@ -582,12 +582,14 @@ const MINES = {
   },
   floodReveal: function (r, c) {
     const stack = [[r, c]];
+    let delay = 0;
     while (stack.length > 0) {
       const [cr, cc] = stack.pop();
       if (cr < 0 || cr >= this.ROWS || cc < 0 || cc >= this.COLS) continue;
       const cell = this.grid[cr][cc];
       if (cell.revealed || cell.flagged || cell.hazard) continue;
       cell.revealed = true;
+      cell.revealAnim = -delay;
       this.revealedCount++;
       if (cell.adj === 0) {
         for (let dr = -1; dr <= 1; dr++) {
@@ -597,6 +599,7 @@ const MINES = {
           }
         }
       }
+      delay += 2;
     }
   },
   cellAt: function (px, py) {
@@ -607,6 +610,13 @@ const MINES = {
   },
   update: function () {
     if (this.flashT > 0) this.flashT--;
+    for (let r = 0; r < this.ROWS; r++) {
+      for (let c = 0; c < this.COLS; c++) {
+        const cell = this.grid[r][c];
+        if (cell.revealAnim < 12) cell.revealAnim++;
+        if (cell.flagAnim > 0) cell.flagAnim--;
+      }
+    }
     if (this.state === 'win' || this.state === 'dead') {
       if (click && pointIn(click.x, click.y, 96, 120, 80, 22)) this.reset();
       if (click && pointIn(click.x, click.y, 208, 120, 80, 22)) setScreen('map');
@@ -620,7 +630,9 @@ const MINES = {
     if (isRightClick || (keys['Shift'] && !cell.revealed)) {
       if (!cell.revealed) {
         cell.flagged = !cell.flagged;
+        cell.flagAnim = 12;
         this.flags += cell.flagged ? 1 : -1;
+        playSfx('flag');
       }
       return;
     }
@@ -633,6 +645,7 @@ const MINES = {
     if (cell.hazard) {
       this.state = 'dead';
       this.flashT = 20;
+      playSfx('boom');
       playSfx('lose');
       for (let r = 0; r < this.ROWS; r++) {
         for (let c = 0; c < this.COLS; c++) {
@@ -642,6 +655,7 @@ const MINES = {
       return;
     }
     this.floodReveal(hit.r, hit.c);
+    playSfx('reveal');
     if (this.revealedCount >= this.COLS * this.ROWS - this.NUM_HAZARDS) {
       this.state = 'win';
       addCoins(30); playSfx('win');
@@ -668,27 +682,34 @@ const MINES = {
         const y = this.OY + r * this.CELL;
         const cell = this.grid[r][c];
         if (cell.revealed) {
+          const ra = cell.revealAnim;
+          const isReady = ra >= 0 && ra < 12;
+          const scale = isReady ? Math.min(1, ra / 6) : 1;
+          const offset = isReady ? Math.floor((1 - scale) * this.CELL / 2) : 0;
           const isHaz = cell.hazard;
-          rect(x, y, this.CELL, this.CELL, isHaz ? PALETTE.red : PALETTE.dgray);
-          rect(x + 1, y + 1, this.CELL - 2, this.CELL - 2, isHaz ? '#7a2a35' : '#4a5570');
-          if (isHaz) {
-            rect(x + 5, y + 4, 8, 8, PALETTE.void);
-            rect(x + 6, y + 5, 6, 6, PALETTE.red);
-            ctx.font = '8px "Press Start 2P", monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = PALETTE.cream;
-            ctx.fillText('!', x + this.CELL / 2, y + this.CELL / 2 + 1);
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-          } else if (cell.adj > 0) {
-            ctx.font = '8px "Press Start 2P", monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = this.numColor(cell.adj);
-            ctx.fillText(String(cell.adj), x + this.CELL / 2, y + this.CELL / 2 + 1);
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
+          const flash = isReady && ra < 4;
+          rect(x, y, this.CELL, this.CELL, flash ? PALETTE.cream : (isHaz ? PALETTE.red : PALETTE.dgray));
+          rect(x + 1 + offset, y + 1 + offset, (this.CELL - 2) * scale, (this.CELL - 2) * scale, isHaz ? '#7a2a35' : '#4a5570');
+          if (scale >= 0.8) {
+            if (isHaz) {
+              rect(x + 5, y + 4, 8, 8, PALETTE.void);
+              rect(x + 6, y + 5, 6, 6, flash ? PALETTE.cream : PALETTE.red);
+              ctx.font = '8px "Press Start 2P", monospace';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillStyle = PALETTE.cream;
+              ctx.fillText('!', x + this.CELL / 2, y + this.CELL / 2 + 1);
+              ctx.textAlign = 'left';
+              ctx.textBaseline = 'top';
+            } else if (cell.adj > 0) {
+              ctx.font = '8px "Press Start 2P", monospace';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillStyle = this.numColor(cell.adj);
+              ctx.fillText(String(cell.adj), x + this.CELL / 2, y + this.CELL / 2 + 1);
+              ctx.textAlign = 'left';
+              ctx.textBaseline = 'top';
+            }
           }
         } else {
           rect(x, y, this.CELL, this.CELL, '#5a6a80');
@@ -696,9 +717,19 @@ const MINES = {
           rect(x + 1, y + this.CELL - 3, this.CELL - 2, 2, '#3a4458');
           rect(x + this.CELL - 3, y + 1, 2, this.CELL - 2, '#3a4458');
           if (cell.flagged) {
-            rect(x + 3, y + 4, 10, 6, PALETTE.gold);
-            rect(x + 3, y + 4, 3, 6, PALETTE.red);
+            const fa = cell.flagAnim;
+            const bounce = fa > 0 ? Math.sin((fa / 12) * Math.PI) * 3 : 0;
+            rect(x + 3, y + 4 - Math.floor(bounce), 10, 6, PALETTE.gold);
+            rect(x + 3, y + 4 - Math.floor(bounce), 3, 6, PALETTE.red);
             rect(x + 4, y + 10, 4, 4, PALETTE.void);
+            if (fa > 6) {
+              for (let i = 0; i < 3; i++) {
+                const sa = fa - 6 - i * 2;
+                if (sa > 0 && sa < 4) {
+                  rect(x + 5 + i * 3, y + 2 - sa, 1, 1, PALETTE.gold);
+                }
+              }
+            }
           }
         }
       }
