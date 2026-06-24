@@ -245,6 +245,158 @@ const MAP_ZONES = [
   { id: 'fight', x: 148, y: 98, w: 88, h: 48, label: 'FIGHTER', icon: 'sword', color: PALETTE.red }
 ];
 
+function drawPerson(x, y, shirt, hair) {
+  const cx = Math.floor(x) + 2;
+  const yy = Math.floor(y);
+  rect(cx + 1, yy + 13, 5, 4, '#3a2a1a');
+  rect(cx + 8, yy + 13, 5, 4, '#3a2a1a');
+  rect(cx, yy + 8, 14, 6, shirt);
+  rect(cx - 1, yy + 9, 2, 4, shirt);
+  rect(cx + 13, yy + 9, 2, 4, shirt);
+  rect(cx + 3, yy + 2, 8, 7, PALETTE.cream);
+  rect(cx + 3, yy, 8, 3, hair);
+  rect(cx + 2, yy + 1, 1, 2, hair);
+  rect(cx + 11, yy + 1, 1, 2, hair);
+  rect(cx + 5, yy + 5, 1, 1, PALETTE.void);
+  rect(cx + 8, yy + 5, 1, 1, PALETTE.void);
+}
+
+const CROSSY = {
+  CELL: 18, COLS: 21, ROWS: 10,
+  OX: 3, OY: 24,
+  enter: function () { this.reset(); },
+  cellX: function (c) { return this.OX + c * this.CELL; },
+  cellY: function (r) { return this.OY + r * this.CELL; },
+  reset: function () {
+    this.pcol = 10; this.prow = 9;
+    this.px = this.cellX(10); this.py = this.cellY(9);
+    this.state = 'play';
+    this.flash = 0;
+    this.buildLanes();
+  },
+  buildLanes: function () {
+    this.lanes = [];
+    const shirts = [PALETTE.red, PALETTE.orange, PALETTE.purple, PALETTE.dgreen, PALETTE.lblue];
+    const hairs = ['#3a2a1a', '#6b4a2a', '#1a1c2c', '#8a5a2a'];
+    for (let r = 1; r < this.ROWS - 1; r++) {
+      const dir = (r % 2 === 0) ? 1 : -1;
+      const speed = 0.022 + r * 0.0035;
+      const count = 2 + (r % 2);
+      const gap = this.COLS / count;
+      const workers = [];
+      for (let i = 0; i < count; i++) {
+        workers.push({
+          col: (i * gap + r * 0.7) % this.COLS,
+          dir: dir, speed: speed,
+          shirt: shirts[(r + i) % shirts.length],
+          hair: hairs[(i + r) % hairs.length]
+        });
+      }
+      this.lanes.push({ row: r, workers: workers });
+    }
+  },
+  move: function (dc, dr) {
+    if (this.state !== 'play') return;
+    this.pcol = Math.max(0, Math.min(this.COLS - 1, this.pcol + dc));
+    this.prow = Math.max(0, Math.min(this.ROWS - 1, this.prow + dr));
+  },
+  update: function () {
+    if (this.state === 'play') {
+      if (justPressed['ArrowUp'] || justPressed['w'] || justPressed['W']) this.move(0, -1);
+      if (justPressed['ArrowDown'] || justPressed['s'] || justPressed['S']) this.move(0, 1);
+      if (justPressed['ArrowLeft'] || justPressed['a'] || justPressed['A']) this.move(-1, 0);
+      if (justPressed['ArrowRight'] || justPressed['d'] || justPressed['D']) this.move(1, 0);
+      if (click) {
+        const pcx = this.px + 9, pcy = this.py + 9;
+        const dx = click.x - pcx, dy = click.y - pcy;
+        if (Math.abs(dy) >= Math.abs(dx)) this.move(0, dy < 0 ? -1 : 1);
+        else this.move(dx < 0 ? -1 : 1, 0);
+      }
+    }
+    for (let i = 0; i < this.lanes.length; i++) {
+      const lane = this.lanes[i];
+      for (let j = 0; j < lane.workers.length; j++) {
+        const w = lane.workers[j];
+        w.col += w.dir * w.speed;
+        if (w.col < -1.5) w.col += this.COLS + 3;
+        else if (w.col > this.COLS + 0.5) w.col -= this.COLS + 3;
+      }
+    }
+    this.px += (this.cellX(this.pcol) - this.px) * 0.35;
+    this.py += (this.cellY(this.prow) - this.py) * 0.35;
+    if (this.state === 'play') {
+      const vrow = Math.round((this.py - this.OY) / this.CELL);
+      const pfcol = (this.px - this.OX) / this.CELL + 0.5;
+      for (let i = 0; i < this.lanes.length; i++) {
+        if (this.lanes[i].row !== vrow) continue;
+        const ws = this.lanes[i].workers;
+        for (let j = 0; j < ws.length; j++) {
+          if (Math.abs(ws[j].col + 0.5 - pfcol) < 0.7) { this.state = 'dead'; this.flash = 20; break; }
+        }
+      }
+      if (vrow <= 0) {
+        this.state = 'win';
+        addCoins(10);
+      }
+    }
+    if (this.flash > 0) this.flash--;
+    if (this.state === 'win') {
+      if (click && pointIn(click.x, click.y, 96, 120, 80, 22)) this.reset();
+      if (click && pointIn(click.x, click.y, 208, 120, 80, 22)) setScreen('map');
+    } else if (this.state === 'dead') {
+      if (click && pointIn(click.x, click.y, 96, 120, 80, 22)) this.reset();
+      if (click && pointIn(click.x, click.y, 208, 120, 80, 22)) setScreen('map');
+    }
+  },
+  draw: function () {
+    rect(0, 0, VW, VH, PALETTE.bg);
+    rect(0, 0, VW, 20, PALETTE.dgray);
+    textCenter('CROSS THE OFFICE', 6, 8, PALETTE.gold);
+    for (let r = 0; r < this.ROWS; r++) {
+      const y = this.cellY(r);
+      let c = (r % 2 === 0) ? '#c4d3da' : '#aebfcc';
+      if (r === 0) c = PALETTE.dgreen;
+      if (r === this.ROWS - 1) c = '#9aa6b8';
+      rect(this.OX, y, this.COLS * this.CELL, this.CELL, c);
+    }
+    ctx.font = '7px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = PALETTE.cream;
+    ctx.fillText('EXIT', this.OX + this.COLS * this.CELL / 2, this.cellY(0) + 9);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    for (let i = 0; i < this.lanes.length; i++) {
+      const lane = this.lanes[i];
+      for (let j = 0; j < lane.workers.length; j++) {
+        const w = lane.workers[j];
+        drawPerson(this.cellX(w.col), this.cellY(lane.row), w.shirt, w.hair);
+      }
+    }
+    if (this.flash > 0 && (this.flash % 4) < 2) {
+      drawPerson(this.px, this.py, PALETTE.white, PALETTE.gold);
+    } else {
+      drawPerson(this.px, this.py, PALETTE.blue, PALETTE.gold);
+    }
+    ctx.font = '6px "Press Start 2P", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = PALETTE.gold;
+    ctx.fillText('David', this.px + 9, this.py - 8);
+    ctx.textAlign = 'left';
+    text('arrows/WASD or tap to move', 6, VH - 11, 6, PALETTE.cream);
+    drawHUD();
+    if (this.state === 'win' || this.state === 'dead') {
+      rect(70, 60, 244, 96, PALETTE.void);
+      rect(72, 62, 240, 92, PALETTE.dgray);
+      textCenter(this.state === 'win' ? '+10 COINS!' : 'CAUGHT!', 78, 12, PALETTE.gold);
+      textCenter(this.state === 'win' ? 'David made it!' : 'a coworker got you', 98, 7, PALETTE.cream);
+      uiButton('RETRY', 96, 120, 80, 22, PALETTE.dgreen);
+      uiButton('MAP', 208, 120, 80, 22, PALETTE.purple);
+    }
+  }
+};
+
 const SCREENS = {
   intro: {
     draw: function () {
@@ -275,7 +427,7 @@ const SCREENS = {
       }
     }
   },
-  crossy: placeholderScreen('CROSSY ROAD', 'reach the top   [ESC] map'),
+  crossy: CROSSY,
   rush: placeholderScreen('RUSH HOUR', 'free the car   [ESC] map'),
   fight: placeholderScreen('TURN FIGHTER', 'defeat enemy   [ESC] map'),
   shop: {
