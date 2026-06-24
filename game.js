@@ -841,6 +841,176 @@ const FIGHT = {
   }
 };
 
+const PLUSHIE_POOLS = {
+  interns: {
+    label: 'INTERNS', color: PALETTE.green, price: 50,
+    members: ['Noah', 'Noa', 'Saria', 'Sakurako', 'Shinon', 'Richard', 'Samer', 'Lamu']
+  },
+  suits: {
+    label: 'SUITS', color: PALETTE.orange, price: 150,
+    members: ['Nao', 'David', 'Feifan', 'Hagio-San']
+  },
+  engineers: {
+    label: 'ENGINEERS', color: PALETTE.lblue, price: 400,
+    members: ['Mario', 'Matthew', 'Tetsuya', 'Raj', 'Atul']
+  }
+};
+
+let lootboxResult = null;
+
+function rollLootbox(poolKey) {
+  const pool = PLUSHIE_POOLS[poolKey];
+  if (state.coins < pool.price) return;
+  addCoins(-pool.price);
+  const name = pool.members[Math.floor(Math.random() * pool.members.length)];
+  const key = poolKey + ':' + name;
+  if (state.plushies[key]) {
+    state.plushies[key].count = (state.plushies[key].count || 1) + 1;
+  } else {
+    state.plushies[key] = { pool: poolKey, name: name, count: 1 };
+  }
+  saveState();
+  lootboxResult = { poolKey: poolKey, name: name, t: 0 };
+  setScreen('lootbox');
+}
+
+const SHOP = {
+  draw: function () {
+    rect(0, 0, VW, VH, PALETTE.bg);
+    rect(0, 0, VW, 20, PALETTE.dgray);
+    textCenter('SHOP', 6, 8, PALETTE.gold);
+    const keys = ['interns', 'suits', 'engineers'];
+    const prices = [50, 150, 400];
+    const descs = ['intern plushies', 'exec plushies', 'eng plushies'];
+    const boxW = 100, boxH = 80, gap = 14;
+    const startX = (VW - (boxW * 3 + gap * 2)) / 2;
+    for (let i = 0; i < 3; i++) {
+      const k = keys[i];
+      const pool = PLUSHIE_POOLS[k];
+      const x = startX + i * (boxW + gap);
+      const y = 30;
+      const hover = pointIn(mouse.x, mouse.y, x, y, boxW, boxH);
+      const affordable = state.coins >= pool.price;
+      rect(x + 2, y + 3, boxW, boxH, PALETTE.void);
+      rect(x, y, boxW, boxH, hover && affordable ? PALETTE.gold : pool.color);
+      rect(x, y, boxW, 2, PALETTE.dgray);
+      rect(x, y + boxH - 2, boxW, 2, PALETTE.dgray);
+      rect(x, y, 2, boxH, PALETTE.dgray);
+      rect(x + boxW - 2, y, 2, boxH, PALETTE.dgray);
+      const cx = x + boxW / 2;
+      rect(cx - 10, y + 12, 20, 16, PALETTE.void);
+      rect(cx - 8, y + 14, 16, 12, pool.color);
+      rect(cx - 6, y + 16, 4, 4, PALETTE.gold);
+      rect(cx + 2, y + 16, 4, 4, PALETTE.gold);
+      rect(cx - 3, y + 20, 6, 1, PALETTE.cream);
+      ctx.font = '9px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = PALETTE.void;
+      ctx.fillText(pool.label, cx, y + 34);
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.fillStyle = affordable ? PALETTE.void : PALETTE.red;
+      ctx.fillText(pool.price + 'C', cx, y + 50);
+      ctx.font = '5px "Press Start 2P", monospace';
+      ctx.fillStyle = PALETTE.void;
+      ctx.fillText(descs[i], cx, y + 64);
+      ctx.textAlign = 'left';
+      if (!affordable) {
+        ctx.font = '6px "Press Start 2P", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = PALETTE.red;
+        ctx.fillText('need ' + pool.price + 'C', cx, y + 72);
+        ctx.textAlign = 'left';
+      }
+    }
+    uiButton('COLLECTION', VW / 2 - 54, 122, 108, 20, PALETTE.dgreen);
+    uiButton('MAP', 6, 4, 50, 16, PALETTE.purple);
+    textCenter('click a lootbox to open', VH - 13, 6, PALETTE.cream);
+    drawHUD();
+  },
+  update: function () {
+    if (!click) return;
+    if (pointIn(click.x, click.y, 6, 4, 50, 16)) { setScreen('map'); return; }
+    if (pointIn(click.x, click.y, VW / 2 - 54, 122, 108, 20)) { setScreen('collection'); return; }
+    const keys = ['interns', 'suits', 'engineers'];
+    const boxW = 100, gap = 14;
+    const startX = (VW - (boxW * 3 + gap * 2)) / 2;
+    for (let i = 0; i < 3; i++) {
+      const x = startX + i * (boxW + gap);
+      if (pointIn(click.x, click.y, x, 30, boxW, 80)) { rollLootbox(keys[i]); return; }
+    }
+  }
+};
+
+const LOOTBOX = {
+  draw: function () {
+    rect(0, 0, VW, VH, PALETTE.void);
+    if (!lootboxResult) { setScreen('shop'); return; }
+    const r = lootboxResult;
+    r.t++;
+    const pool = PLUSHIE_POOLS[r.poolKey];
+    const phase = r.t;
+    if (phase < 30) {
+      const f = 30 - phase;
+      const cx = VW / 2, cy = VH / 2;
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + phase * 0.1;
+        const rad = f * 1.5;
+        const px = cx + Math.cos(a) * rad;
+        const py = cy + Math.sin(a) * rad;
+        rect(px - 2, py - 2, 4, 4, [PALETTE.gold, PALETTE.cream, pool.color, PALETTE.lblue][i % 4]);
+      }
+      rect(cx - 16, cy - 16, 32, 32, pool.color);
+      rect(cx - 12, cy - 12, 24, 24, PALETTE.void);
+      if (phase % 6 < 3) rect(cx - 8, cy - 8, 16, 16, PALETTE.gold);
+      else rect(cx - 8, cy - 8, 16, 16, pool.color);
+      textCenter('OPENING...', cy + 24, 8, PALETTE.cream);
+    } else {
+      const cx = VW / 2, cy = 80;
+      const owned = state.plushies[r.poolKey + ':' + r.name];
+      const isNew = owned && owned.count === 1;
+      rect(cx - 30, cy - 24, 60, 60, PALETTE.gold);
+      rect(cx - 26, cy - 20, 52, 52, PALETTE.purple);
+      drawPerson(cx - 7, cy - 4, pool.color, PALETTE.gold);
+      ctx.font = '8px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = PALETTE.gold;
+      ctx.fillText('YOU GOT', cx, 24);
+      ctx.font = '10px "Press Start 2P", monospace';
+      ctx.fillStyle = PALETTE.cream;
+      ctx.fillText(r.name, cx, 40);
+      ctx.font = '6px "Press Start 2P", monospace';
+      ctx.fillStyle = pool.color;
+      ctx.fillText(pool.label, cx, 56);
+      if (!isNew) {
+        ctx.fillStyle = PALETTE.gray;
+        ctx.fillText('DUPLICATE x' + owned.count, cx, 148);
+      } else {
+        ctx.fillStyle = PALETTE.gold;
+        ctx.fillText('NEW!', cx, 148);
+      }
+      ctx.textAlign = 'left';
+      uiButton('OPEN AGAIN', 60, 168, 110, 22, state.coins >= pool.price ? PALETTE.dgreen : PALETTE.dgray);
+      uiButton('COLLECTION', 178, 168, 100, 22, PALETTE.orange);
+      uiButton('MAP', 288, 168, 60, 22, PALETTE.purple);
+      textCenter('coins: ' + state.coins, 144, 6, PALETTE.gold);
+    }
+    drawHUD();
+  },
+  update: function () {
+    if (!lootboxResult) return;
+    const r = lootboxResult;
+    if (r.t < 30) return;
+    const pool = PLUSHIE_POOLS[r.poolKey];
+    if (click && pointIn(click.x, click.y, 60, 168, 110, 22) && state.coins >= pool.price) {
+      rollLootbox(r.poolKey); return;
+    }
+    if (click && pointIn(click.x, click.y, 178, 168, 100, 22)) { setScreen('collection'); return; }
+    if (click && pointIn(click.x, click.y, 288, 168, 60, 22)) { setScreen('map'); return; }
+  }
+};
+
 const SCREENS = {
   intro: {
     draw: function () {
@@ -874,19 +1044,8 @@ const SCREENS = {
   crossy: CROSSY,
   rush: RUSH,
   fight: FIGHT,
-  shop: {
-    draw: function () {
-      rect(0, 0, VW, VH, PALETTE.bg);
-      textCenter('SHOP', 36, 14, PALETTE.gold);
-      textCenter('lootboxes coming soon', 78, 8, PALETTE.cream);
-      uiButton('COLLECTION', VW / 2 - 54, 116, 108, 20, PALETTE.dgreen);
-      textCenter('[ESC] map', VH - 15, 7, PALETTE.gray);
-      drawHUD();
-    },
-    update: function () {
-      if (click && pointIn(click.x, click.y, VW / 2 - 54, 116, 108, 20)) setScreen('collection');
-    }
-  },
+  shop: SHOP,
+  lootbox: LOOTBOX,
   collection: placeholderScreen('COLLECTION', 'your plushies   [ESC] map')
 };
 
